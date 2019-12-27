@@ -319,7 +319,7 @@ kbcg19_posterior <- function(period, m, rlist, ztor, fs, vs, z_1, z_2_5, fx, mb,
   pars_z_nz <- c(6.859789675000001, 2.302585092994046, 5.745692775, 0.91563524375, 1.03531412375)
   pars_z_tw <- c(6.30560665, 2.302585092994046, 6.1104992125, 0.43671101999999995, 0.7229702975000001)
   
-  parameters <- read.csv('/Users/nico/GROUNDMOTION/PROJECTS/SUBDUCTION/CBGK/STAN_V16/RESULTS/parameters_allregca_attn3_corrreg_cs_dmb.csv')
+  parameters <- read.csv('/Users/nico/GROUNDMOTION/PROJECTS/SUBDUCTION/CBGK/STAN_V16/RESULTS/parameters_allregca_attn3_corrreg_cs_dmb_smoothed_gprf.csv')
   parameters_zmod <- read.csv('/Users/nico/GROUNDMOTION/PROJECTS/SUBDUCTION/CBGK/STAN_V16/RESULTS/parameters_Z_ALL_allregca_attn3_corrreg_cs_dmb.csv')
   
   # calculate rock PGA
@@ -688,7 +688,7 @@ sprintf('mean of median predictions: %f',y_post$mean)
 ```
 
 ```
-## [1] "mean of median predictions: -3.342214"
+## [1] "mean of median predictions: -3.342419"
 ```
 
 ```r
@@ -696,7 +696,7 @@ sprintf('median of median predictions: %f',y_post$median)
 ```
 
 ```
-## [1] "median of median predictions: -3.340853"
+## [1] "median of median predictions: -3.341058"
 ```
 
 ```r
