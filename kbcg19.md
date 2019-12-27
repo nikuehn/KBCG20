@@ -4,10 +4,10 @@ author: "Nicolas Kuehn, Yousef Bozorgnia, Ken Campbell, Nick Gregor"
 date: "27 December, 2019"
 output:
   html_document:
+    keep_md: true
     toc: true
     toc_depth: 2
     number_sections: true
-    keep_md: true
 ---
 
 
