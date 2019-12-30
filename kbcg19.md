@@ -1,7 +1,7 @@
 ---
 title: "KBCG_NGA_subduction_model"
 author: "Nicolas Kuehn, Yousef Bozorgnia, Ken Campbell, Nick Gregor"
-date: "27 December, 2019"
+date: "30 December, 2019"
 output:
   html_document:
     keep_md: true
@@ -15,7 +15,6 @@ output:
 # Comments
 Still to do
 
-* Add basin depth scaling
 * add default values for magnitude break point
 * add some checks for inputs to function
 * add some example calculations/plots
@@ -35,6 +34,7 @@ First, we load the needed libraries.
 ```r
 # load required packages
 library(MASS)
+library(ggplot2)
 ```
 
 # Define Functions
@@ -99,7 +99,7 @@ Later, we define a function that acts as a wrapper around this function, and wil
 The inputs are
 
 * `m`: moment magnitude
-* `rlist`: a vector of length 3, which contains the distance in subregion 1,2,3 relative to volcanic arc; `rlist <- c(R1,R2,R3)`. Typically, $R1=R3=0$ (corresponding to forearc).
+* `rlist`: a vector of length 3, which contains the distance in subregion 1,2,3 relative to volcanic arc; `rlist <- c(R1,R2,R3)`. Typically, `R1=R3=0` (corresponding to forearc).
 * `ztor`: depth to top of rupture in km.
 * `fs`: flag for interface (`fs <- 0`) and intraslab (`fs <- 1`). Must be 0 or 1.
 * `vs`: $V_{S30}$ n m/s.
@@ -118,39 +118,39 @@ The inputs are
 kbcg19_med <- function(m, rlist, ztor, fs, vs, fx, delta_ln_z, coeffs, coeffs_attn, coeffs_z, mbreak, zbreak, 
                         k1, k2, nft1, nft2, pgarock) {
   
-  rrup = sum(rlist);
-  theta10 = 0;
-  vsrock = 1100;
-  c = 1.88;
-  n = 1.18;
-  minmb = 6.;
-  delta = 0.1;
-  deltaz = 1;
-  refzif = 15;
-  refzslab = 50;
+  rrup <- sum(rlist);
+  theta10 <- 0;
+  vsrock <- 1100;
+  c <- 1.88;
+  n <- 1.18;
+  minmb <- 6.;
+  delta <- 0.1;
+  deltaz <- 1;
+  refzif <- 15;
+  refzslab <- 50;
   
   
   
-  fmag = (1 - fs) * loghinge(m, mbreak, coeffs[6] * (mbreak - minmb), coeffs[6], coeffs[8], delta) + 
+  fmag <- (1 - fs) * loghinge(m, mbreak, coeffs[6] * (mbreak - minmb), coeffs[6], coeffs[8], delta) + 
          fs * loghinge(m, mbreak, coeffs[7] * (mbreak - minmb), coeffs[7], coeffs[8], delta)
   
-  fgeom = (1 - fs) * (coeffs[3] + coeffs[5] * m) * log(rrup + 10^(nft1 + nft2 * (m - 6)))
-  fgeom_slab = fs * (coeffs[4] + coeffs[5] * m) * log(rrup + 10^(nft1 + nft2 * (m - 6)))
+  fgeom <- (1 - fs) * (coeffs[3] + coeffs[5] * m) * log(rrup + 10^(nft1 + nft2 * (m - 6)))
+  fgeom_slab <- fs * (coeffs[4] + coeffs[5] * m) * log(rrup + 10^(nft1 + nft2 * (m - 6)))
   
-  fdepth = (1 - fs) * loghinge(ztor, zbreak, coeffs[12] * (zbreak - refzif), coeffs[12], theta10, deltaz) + 
+  fdepth <- (1 - fs) * loghinge(ztor, zbreak, coeffs[12] * (zbreak - refzif), coeffs[12], theta10, deltaz) + 
            fs * loghinge(ztor, zbreak, coeffs[13] * (zbreak - refzslab), coeffs[12], theta10, deltaz)
   
-  fattn = fx * as.numeric(rlist %*% coeffs_attn[c(1,2,3)]) + (1 - fx) * as.numeric(rlist %*% coeffs_attn[c(4,5,6)]) + fx * coeffs[14]
+  fattn <- fx * as.numeric(rlist %*% coeffs_attn[c(1,2,3)]) + (1 - fx) * as.numeric(rlist %*% coeffs_attn[c(4,5,6)]) + fx * coeffs[14]
   
   if(vs < k1) {
-    fsite = coeffs[11] * log(vs / k1) + k2 * (log(pgarock + c * (vs / k1)^n) - log(pgarock + c))
+    fsite <- coeffs[11] * log(vs / k1) + k2 * (log(pgarock + c * (vs / k1)^n) - log(pgarock + c))
   } else {
-    fsite = (coeffs[11] + k2 * n) * log(vs/k1)
+    fsite <- (coeffs[11] + k2 * n) * log(vs/k1)
   }
   
   fbasin <- coeffs_z[1] + coeffs_z[2] * delta_ln_z
   
-  median = (1 - fs) * coeffs[1] + fs * coeffs[2] + fmag + fgeom + fgeom_slab + fdepth + fattn + fsite + fbasin;
+  median <- (1 - fs) * coeffs[1] + fs * coeffs[2] + fmag + fgeom + fgeom_slab + fdepth + fattn + fsite + fbasin;
   return(median)
 }
 ```
@@ -186,53 +186,53 @@ kbcg19 <- function(period, m, rlist, ztor, fs, vs, z_1, z_2_5, fx, mb, reg, Seat
   parameters_zmod <- read.csv('/Users/nico/GROUNDMOTION/PROJECTS/SUBDUCTION/CBGK/STAN_V16/RESULTS/parameters_Z_ALL_allregca_attn3_corrreg_cs_dmb.csv')
   
   # calculate rock PGA
-  vsrock = 1100
+  vsrock <- 1100
   pars_period <- as.numeric(parameters[parameters$T == 0.,])
   coeffs <- pars_period[seq(2,15)]
   k1k2 <- interp_k1k2(0.)
   dmb <- interp_dmb(0.)
   
   if(reg == 1) {
-    coeffs[c(1,2,11)] = pars_period[c(17, 24, 31)]
-    coeffs_attn = pars_period[c(38, 45, 52, 59, 66, 73)]
+    coeffs[c(1,2,11)] <- pars_period[c(17, 24, 31)]
+    coeffs_attn <- pars_period[c(38, 45, 52, 59, 66, 73)]
     delta_ln_z <- 0
     coeffs_z <- c(0,0)
   } else if(reg == 2) {
-    coeffs[c(1,2,11)] = pars_period[c(18, 25, 32)]
-    coeffs_attn = pars_period[c(39, 46, 53, 60, 67, 74)]
+    coeffs[c(1,2,11)] <- pars_period[c(18, 25, 32)]
+    coeffs_attn <- pars_period[c(39, 46, 53, 60, 67, 74)]
     delta_ln_z <- 0
     coeffs_z <- c(0,0)
   } else if(reg == 3) {
-    coeffs[c(1,2,11)] = pars_period[c(19, 26, 33)]
-    coeffs_attn = pars_period[c(40, 47, 54, 61, 68, 75)]
+    coeffs[c(1,2,11)] <- pars_period[c(19, 26, 33)]
+    coeffs_attn <- pars_period[c(40, 47, 54, 61, 68, 75)]
     delta_ln_z <- 0
     coeffs_z <- c(0,0)
   } else if(reg == 4) {
-    coeffs[c(1,2,11)] = pars_period[c(20, 27, 34)]
-    coeffs_attn = pars_period[c(41, 48, 55, 62, 69, 76)]
+    coeffs[c(1,2,11)] <- pars_period[c(20, 27, 34)]
+    coeffs_attn <- pars_period[c(41, 48, 55, 62, 69, 76)]
     delta_ln_z <- 0
     coeffs_z <- c(0,0)
   } else if(reg == 5) {
-    coeffs[c(1,2,11)] = pars_period[c(21, 28, 35)]
-    coeffs_attn = pars_period[c(42, 49, 56, 63, 70, 77)]
+    coeffs[c(1,2,11)] <- pars_period[c(21, 28, 35)]
+    coeffs_attn <- pars_period[c(42, 49, 56, 63, 70, 77)]
     delta_ln_z <- 0
     coeffs_z <- c(0,0)
   } else if(reg == 6) {
-    coeffs[c(1,2,11)] = pars_period[c(22, 29, 36)]
-    coeffs_attn = pars_period[c(43, 50, 57, 64, 71, 78)]
+    coeffs[c(1,2,11)] <- pars_period[c(22, 29, 36)]
+    coeffs_attn <- pars_period[c(43, 50, 57, 64, 71, 78)]
     delta_ln_z <- 0
     coeffs_z <- c(0,0)
   } else if(reg == 7) {
-    coeffs[c(1,2,11)] = pars_period[c(23, 30, 37)]
-    coeffs_attn = pars_period[c(44, 51, 58, 65, 72, 79)]
+    coeffs[c(1,2,11)] <- pars_period[c(23, 30, 37)]
+    coeffs_attn <- pars_period[c(44, 51, 58, 65, 72, 79)]
     delta_ln_z <- 0
     coeffs_z <- c(0,0)
   }
   delta_bz <- pars_period[c(80,81)]
   coeffs_nft <- pars_period[c(82,83)]
   
-  mbreak = (1 - fs) * (mb + dmb) + fs * mb
-  zbreak = (1 - fs) * (30 + delta_bz[1]) + fs * (80 + delta_bz[2])
+  mbreak <- (1 - fs) * (mb + dmb) + fs * mb
+  zbreak <- (1 - fs) * (30 + delta_bz[1]) + fs * (80 + delta_bz[2])
   
   pgarock <- exp(kbcg19_med(m, rlist, ztor, fs, vsrock, fx, delta_ln_z, coeffs, coeffs_attn, coeffs_z, mbreak, zbreak, 
              k1k2[1], k1k2[2], coeffs_nft[1], coeffs_nft[2], 0))
@@ -246,50 +246,50 @@ kbcg19 <- function(period, m, rlist, ztor, fs, vs, z_1, z_2_5, fx, mb, reg, Seat
   dmb <- interp_dmb(period)
   
   if(reg == 1) {
-    coeffs[c(1,2,11)] = pars_period[c(17, 24, 31)]
-    coeffs_attn = pars_period[c(38, 45, 52, 59, 66, 73)]
+    coeffs[c(1,2,11)] <- pars_period[c(17, 24, 31)]
+    coeffs_attn <- pars_period[c(38, 45, 52, 59, 66, 73)]
     delta_ln_z <- 0
     coeffs_z <- c(0,0)
   } else if(reg == 2) {
-    coeffs[c(1,2,11)] = pars_period[c(18, 25, 32)]
-    coeffs_attn = pars_period[c(39, 46, 53, 60, 67, 74)]
+    coeffs[c(1,2,11)] <- pars_period[c(18, 25, 32)]
+    coeffs_attn <- pars_period[c(39, 46, 53, 60, 67, 74)]
     delta_ln_z <- log(z_2_5) - calc_z_from_vs(log(vs), pars_z_casc)
     coeffs_z <- as.numeric(parameters_zmod[parameters_zmod$T == period,c(2,3)])
     coeff_seattle <- parameters_zmod[parameters_zmod$T == period,]$mean_residual_Seattle_basin
     if(Seattle_Basin) {
-      coeffs_z = c(coeff_seattle,0)
+      coeffs_z <- c(coeff_seattle,0)
     }
   } else if(reg == 3) {
-    coeffs[c(1,2,11)] = pars_period[c(19, 26, 33)]
-    coeffs_attn = pars_period[c(40, 47, 54, 61, 68, 75)]
+    coeffs[c(1,2,11)] <- pars_period[c(19, 26, 33)]
+    coeffs_attn <- pars_period[c(40, 47, 54, 61, 68, 75)]
     delta_ln_z <- 0
     coeffs_z <- c(0,0)
   } else if(reg == 4) {
-    coeffs[c(1,2,11)] = pars_period[c(20, 27, 34)]
-    coeffs_attn = pars_period[c(41, 48, 55, 62, 69, 76)]
+    coeffs[c(1,2,11)] <- pars_period[c(20, 27, 34)]
+    coeffs_attn <- pars_period[c(41, 48, 55, 62, 69, 76)]
     delta_ln_z <- log(z_2_5) - calc_z_from_vs(log(vs), pars_z_ja)
     coeffs_z <- as.numeric(parameters_zmod[parameters_zmod$T == period,c(5,6)])
   } else if(reg == 5) {
-    coeffs[c(1,2,11)] = pars_period[c(21, 28, 35)]
-    coeffs_attn = pars_period[c(42, 49, 56, 63, 70, 77)]
+    coeffs[c(1,2,11)] <- pars_period[c(21, 28, 35)]
+    coeffs_attn <- pars_period[c(42, 49, 56, 63, 70, 77)]
     delta_ln_z <- log(z_1) - calc_z_from_vs(log(vs), pars_z_nz)
     coeffs_z <- as.numeric(parameters_zmod[parameters_zmod$T == period,c(7,8)])
   } else if(reg == 6) {
-    coeffs[c(1,2,11)] = pars_period[c(22, 29, 36)]
-    coeffs_attn = pars_period[c(43, 50, 57, 64, 71, 78)]
+    coeffs[c(1,2,11)] <- pars_period[c(22, 29, 36)]
+    coeffs_attn <- pars_period[c(43, 50, 57, 64, 71, 78)]
     delta_ln_z <- 0
     coeffs_z <- c(0,0)
   } else if(reg == 7) {
-    coeffs[c(1,2,11)] = pars_period[c(23, 30, 37)]
-    coeffs_attn = pars_period[c(44, 51, 58, 65, 72, 79)]
+    coeffs[c(1,2,11)] <- pars_period[c(23, 30, 37)]
+    coeffs_attn <- pars_period[c(44, 51, 58, 65, 72, 79)]
     delta_ln_z <- log(z_1) - calc_z_from_vs(log(vs), pars_z_tw)
     coeffs_z <- as.numeric(parameters_zmod[parameters_zmod$T == period,c(9,10)])
   }
   delta_bz <- pars_period[c(80,81)]
   coeffs_nft <- pars_period[c(82,83)]
   
-  mbreak = (1 - fs) * (mb + dmb) + fs * mb
-  zbreak = (1 - fs) * (30 + delta_bz[1]) + fs * (80 + delta_bz[2])
+  mbreak <- (1 - fs) * (mb + dmb) + fs * mb
+  zbreak <- (1 - fs) * (30 + delta_bz[1]) + fs * (80 + delta_bz[2])
   
   med <- kbcg19_med(m, rlist, ztor, fs, vs, fx, delta_ln_z, coeffs, coeffs_attn, coeffs_z, mbreak, zbreak, 
                             k1k2[1], k1k2[2], coeffs_nft[1], coeffs_nft[2], pgarock)
@@ -323,50 +323,50 @@ kbcg19_posterior <- function(period, m, rlist, ztor, fs, vs, z_1, z_2_5, fx, mb,
   parameters_zmod <- read.csv('/Users/nico/GROUNDMOTION/PROJECTS/SUBDUCTION/CBGK/STAN_V16/RESULTS/parameters_Z_ALL_allregca_attn3_corrreg_cs_dmb.csv')
   
   # calculate rock PGA
-  vsrock = 1100
+  vsrock <- 1100
   pars_period <- as.numeric(parameters[parameters$T == 0.,])
   coeffs <- pars_period[seq(2,15)]
   k1k2 <- interp_k1k2(0.)
   dmb <- interp_dmb(0.)
   
   if(reg == 1) {
-    coeffs[c(1,2,11)] = pars_period[c(17, 24, 31)]
-    coeffs_attn = pars_period[c(38, 45, 52, 59, 66, 73)]
+    coeffs[c(1,2,11)] <- pars_period[c(17, 24, 31)]
+    coeffs_attn <- pars_period[c(38, 45, 52, 59, 66, 73)]
     delta_ln_z <- 0
     coeffs_z <- c(0,0)
   } else if(reg == 2) {
-    coeffs[c(1,2,11)] = pars_period[c(18, 25, 32)]
-    coeffs_attn = pars_period[c(39, 46, 53, 60, 67, 74)]
+    coeffs[c(1,2,11)] <- pars_period[c(18, 25, 32)]
+    coeffs_attn <- pars_period[c(39, 46, 53, 60, 67, 74)]
     delta_ln_z <- 0
     coeffs_z <- c(0,0)
   } else if(reg == 3) {
-    coeffs[c(1,2,11)] = pars_period[c(19, 26, 33)]
-    coeffs_attn = pars_period[c(40, 47, 54, 61, 68, 75)]
+    coeffs[c(1,2,11)] <- pars_period[c(19, 26, 33)]
+    coeffs_attn <- pars_period[c(40, 47, 54, 61, 68, 75)]
     delta_ln_z <- 0
     coeffs_z <- c(0,0)
   } else if(reg == 4) {
-    coeffs[c(1,2,11)] = pars_period[c(20, 27, 34)]
-    coeffs_attn = pars_period[c(41, 48, 55, 62, 69, 76)]
+    coeffs[c(1,2,11)] <- pars_period[c(20, 27, 34)]
+    coeffs_attn <- pars_period[c(41, 48, 55, 62, 69, 76)]
     delta_ln_z <- 0
     coeffs_z <- c(0,0)
   } else if(reg == 5) {
-    coeffs[c(1,2,11)] = pars_period[c(21, 28, 35)]
-    coeffs_attn = pars_period[c(42, 49, 56, 63, 70, 77)]
+    coeffs[c(1,2,11)] <- pars_period[c(21, 28, 35)]
+    coeffs_attn <- pars_period[c(42, 49, 56, 63, 70, 77)]
     delta_ln_z <- 0
     coeffs_z <- c(0,0)
   } else if(reg == 6) {
-    coeffs[c(1,2,11)] = pars_period[c(22, 29, 36)]
-    coeffs_attn = pars_period[c(43, 50, 57, 64, 71, 78)]
+    coeffs[c(1,2,11)] <- pars_period[c(22, 29, 36)]
+    coeffs_attn <- pars_period[c(43, 50, 57, 64, 71, 78)]
     delta_ln_z <- 0
     coeffs_z <- c(0,0)
   } else if(reg == 7) {
-    coeffs[c(1,2,11)] = pars_period[c(23, 30, 37)]
-    coeffs_attn = pars_period[c(44, 51, 58, 65, 72, 79)]
+    coeffs[c(1,2,11)] <- pars_period[c(23, 30, 37)]
+    coeffs_attn <- pars_period[c(44, 51, 58, 65, 72, 79)]
     delta_ln_z <- 0
     coeffs_z <- c(0,0)
   } else if(reg == 0) {
-    coeffs[c(1,2,11)] = pars_period[c(172, 173, 174)]
-    coeffs_attn = pars_period[c(175, 176, 177, 178, 179, 180)]
+    coeffs[c(1,2,11)] <- pars_period[c(172, 173, 174)]
+    coeffs_attn <- pars_period[c(175, 176, 177, 178, 179, 180)]
     
     delta_ln_z <- 0
     coeffs_z <- c(0,0)
@@ -376,8 +376,8 @@ kbcg19_posterior <- function(period, m, rlist, ztor, fs, vs, z_1, z_2_5, fx, mb,
   delta_bz <- pars_period[c(80,81)]
   coeffs_nft <- pars_period[c(82,83)]
   
-  mbreak = (1 - fs) * (mb + dmb) + fs * mb
-  zbreak = (1 - fs) * (30 + delta_bz[1]) + fs * (80 + delta_bz[2])
+  mbreak <- (1 - fs) * (mb + dmb) + fs * mb
+  zbreak <- (1 - fs) * (30 + delta_bz[1]) + fs * (80 + delta_bz[2])
   
   pgarock <- exp(kbcg19_med(m, rlist, ztor, fs, vsrock, fx, delta_ln_z, coeffs, coeffs_attn, coeffs_z, mbreak, zbreak, 
                             k1k2[1], k1k2[2], coeffs_nft[1], coeffs_nft[2], 0))
@@ -396,47 +396,47 @@ kbcg19_posterior <- function(period, m, rlist, ztor, fs, vs, z_1, z_2_5, fx, mb,
     coeffs <- pars_period[seq(2,15)]
   
     if(reg == 1) {
-      coeffs[c(1,2,11)] = pars_period[c(17, 24, 31)]
-      coeffs_attn = pars_period[c(38, 45, 52, 59, 66, 73)]
+      coeffs[c(1,2,11)] <-pars_period[c(17, 24, 31)]
+      coeffs_attn <-pars_period[c(38, 45, 52, 59, 66, 73)]
       delta_ln_z <- 0
       coeffs_z <- c(0,0)
     } else if(reg == 2) {
-      coeffs[c(1,2,11)] = pars_period[c(18, 25, 32)]
-      coeffs_attn = pars_period[c(39, 46, 53, 60, 67, 74)]
+      coeffs[c(1,2,11)] <-pars_period[c(18, 25, 32)]
+      coeffs_attn <-pars_period[c(39, 46, 53, 60, 67, 74)]
       delta_ln_z <- log(z_2_5) - calc_z_from_vs(log(vs), pars_z_casc)
       coeffs_z <- as.numeric(parameters_zmod[parameters_zmod$T == period,c(2,3)])
       coeff_seattle <- parameters_zmod[parameters_zmod$T == period,]$mean_residual_Seattle_basin
       if(Seattle_Basin) {
-        coeffs_z = c(coeff_seattle,0)
+        coeffs_z <-c(coeff_seattle,0)
       }
     } else if(reg == 3) {
-      coeffs[c(1,2,11)] = pars_period[c(19, 26, 33)]
-      coeffs_attn = pars_period[c(40, 47, 54, 61, 68, 75)]
+      coeffs[c(1,2,11)] <-pars_period[c(19, 26, 33)]
+      coeffs_attn <-pars_period[c(40, 47, 54, 61, 68, 75)]
       delta_ln_z <- 0
       coeffs_z <- c(0,0)
     } else if(reg == 4) {
-      coeffs[c(1,2,11)] = pars_period[c(20, 27, 34)]
-      coeffs_attn = pars_period[c(41, 48, 55, 62, 69, 76)]
+      coeffs[c(1,2,11)] <-pars_period[c(20, 27, 34)]
+      coeffs_attn <-pars_period[c(41, 48, 55, 62, 69, 76)]
       delta_ln_z <- log(z_2_5) - calc_z_from_vs(log(vs), pars_z_ja)
       coeffs_z <- as.numeric(parameters_zmod[parameters_zmod$T == period,c(5,6)])
     } else if(reg == 5) {
-      coeffs[c(1,2,11)] = pars_period[c(21, 28, 35)]
-      coeffs_attn = pars_period[c(42, 49, 56, 63, 70, 77)]
+      coeffs[c(1,2,11)] <-pars_period[c(21, 28, 35)]
+      coeffs_attn <-pars_period[c(42, 49, 56, 63, 70, 77)]
       delta_ln_z <- log(z_1) - calc_z_from_vs(log(vs), pars_z_nz)
       coeffs_z <- as.numeric(parameters_zmod[parameters_zmod$T == period,c(7,8)])
     } else if(reg == 6) {
-      coeffs[c(1,2,11)] = pars_period[c(22, 29, 36)]
-      coeffs_attn = pars_period[c(43, 50, 57, 64, 71, 78)]
+      coeffs[c(1,2,11)] <-pars_period[c(22, 29, 36)]
+      coeffs_attn <-pars_period[c(43, 50, 57, 64, 71, 78)]
       delta_ln_z <- 0
       coeffs_z <- c(0,0)
     } else if(reg == 7) {
-      coeffs[c(1,2,11)] = pars_period[c(23, 30, 37)]
-      coeffs_attn = pars_period[c(44, 51, 58, 65, 72, 79)]
+      coeffs[c(1,2,11)] <-pars_period[c(23, 30, 37)]
+      coeffs_attn <-pars_period[c(44, 51, 58, 65, 72, 79)]
       delta_ln_z <- log(z_1) - calc_z_from_vs(log(vs), pars_z_tw)
       coeffs_z <- as.numeric(parameters_zmod[parameters_zmod$T == period,c(9,10)])
     } else if(reg == 0) {
-      coeffs[c(1,2,11)] = pars_period[c(172, 173, 174)]
-      coeffs_attn = pars_period[c(175, 176, 177, 178, 179, 180)]
+      coeffs[c(1,2,11)] <-pars_period[c(172, 173, 174)]
+      coeffs_attn <-pars_period[c(175, 176, 177, 178, 179, 180)]
       
       delta_ln_z <- 0
       coeffs_z <- c(0,0)
@@ -446,8 +446,8 @@ kbcg19_posterior <- function(period, m, rlist, ztor, fs, vs, z_1, z_2_5, fx, mb,
     delta_bz <- pars_period[c(80,81)]
     coeffs_nft <- pars_period[c(82,83)]
   
-    mbreak = (1 - fs) * (mb + dmb) + fs * mb
-    zbreak = (1 - fs) * (30 + delta_bz[1]) + fs * (80 + delta_bz[2])
+    mbreak <-(1 - fs) * (mb + dmb) + fs * mb
+    zbreak <-(1 - fs) * (30 + delta_bz[1]) + fs * (80 + delta_bz[2])
   
     med <- kbcg19_med(m, rlist, ztor, fs, vs, fx, delta_ln_z, coeffs, coeffs_attn, coeffs_z, mbreak, zbreak, 
                       k1k2[1], k1k2[2], coeffs_nft[1], coeffs_nft[2], pgarock)
@@ -474,45 +474,45 @@ kbcg19_posterior_sample <- function(period, m, rlist, ztor, fs, vs, z_1, z_2_5, 
   parameters_zmod <- read.csv('/Users/nico/GROUNDMOTION/PROJECTS/SUBDUCTION/CBGK/STAN_V16/RESULTS/parameters_Z_ALL_allregca_attn3_corrreg_cs_dmb.csv')
   
   # calculate rock PGA
-  vsrock = 1100
+  vsrock <-1100
   pars_period <- as.numeric(parameters[parameters$T == 0.,])
   coeffs <- pars_period[seq(2,15)]
   k1k2 <- interp_k1k2(0.)
   dmb <- interp_dmb(0.)
   
   if(reg == 1) {
-    coeffs[c(1,2,11)] = pars_period[c(17, 24, 31)]
-    coeffs_attn = pars_period[c(38, 45, 52, 59, 66, 73)]
+    coeffs[c(1,2,11)] <-pars_period[c(17, 24, 31)]
+    coeffs_attn <-pars_period[c(38, 45, 52, 59, 66, 73)]
     delta_ln_z <- 0
     coeffs_z <- c(0,0)
   } else if(reg == 2) {
-    coeffs[c(1,2,11)] = pars_period[c(18, 25, 32)]
-    coeffs_attn = pars_period[c(39, 46, 53, 60, 67, 74)]
+    coeffs[c(1,2,11)] <-pars_period[c(18, 25, 32)]
+    coeffs_attn <-pars_period[c(39, 46, 53, 60, 67, 74)]
     delta_ln_z <- 0
     coeffs_z <- c(0,0)
   } else if(reg == 3) {
-    coeffs[c(1,2,11)] = pars_period[c(19, 26, 33)]
-    coeffs_attn = pars_period[c(40, 47, 54, 61, 68, 75)]
+    coeffs[c(1,2,11)] <-pars_period[c(19, 26, 33)]
+    coeffs_attn <-pars_period[c(40, 47, 54, 61, 68, 75)]
     delta_ln_z <- 0
     coeffs_z <- c(0,0)
   } else if(reg == 4) {
-    coeffs[c(1,2,11)] = pars_period[c(20, 27, 34)]
-    coeffs_attn = pars_period[c(41, 48, 55, 62, 69, 76)]
+    coeffs[c(1,2,11)] <-pars_period[c(20, 27, 34)]
+    coeffs_attn <-pars_period[c(41, 48, 55, 62, 69, 76)]
     delta_ln_z <- 0
     coeffs_z <- c(0,0)
   } else if(reg == 5) {
-    coeffs[c(1,2,11)] = pars_period[c(21, 28, 35)]
-    coeffs_attn = pars_period[c(42, 49, 56, 63, 70, 77)]
+    coeffs[c(1,2,11)] <-pars_period[c(21, 28, 35)]
+    coeffs_attn <-pars_period[c(42, 49, 56, 63, 70, 77)]
     delta_ln_z <- 0
     coeffs_z <- c(0,0)
   } else if(reg == 6) {
-    coeffs[c(1,2,11)] = pars_period[c(22, 29, 36)]
-    coeffs_attn = pars_period[c(43, 50, 57, 64, 71, 78)]
+    coeffs[c(1,2,11)] <-pars_period[c(22, 29, 36)]
+    coeffs_attn <-pars_period[c(43, 50, 57, 64, 71, 78)]
     delta_ln_z <- 0
     coeffs_z <- c(0,0)
   } else if(reg == 7) {
-    coeffs[c(1,2,11)] = pars_period[c(23, 30, 37)]
-    coeffs_attn = pars_period[c(44, 51, 58, 65, 72, 79)]
+    coeffs[c(1,2,11)] <-pars_period[c(23, 30, 37)]
+    coeffs_attn <-pars_period[c(44, 51, 58, 65, 72, 79)]
     delta_ln_z <- 0
     coeffs_z <- c(0,0)
   } else if(reg == 0) {
@@ -547,8 +547,8 @@ kbcg19_posterior_sample <- function(period, m, rlist, ztor, fs, vs, z_1, z_2_5, 
   delta_bz <- pars_period[c(80,81)]
   coeffs_nft <- pars_period[c(82,83)]
   
-  mbreak = (1 - fs) * (mb + dmb) + fs * mb
-  zbreak = (1 - fs) * (30 + delta_bz[1]) + fs * (80 + delta_bz[2])
+  mbreak <-(1 - fs) * (mb + dmb) + fs * mb
+  zbreak <-(1 - fs) * (30 + delta_bz[1]) + fs * (80 + delta_bz[2])
   
   pgarock <- exp(kbcg19_med(m, rlist, ztor, fs, vsrock, fx, delta_ln_z, coeffs, coeffs_attn, coeffs_z, mbreak, zbreak, 
                             k1k2[1], k1k2[2], coeffs_nft[1], coeffs_nft[2], 0))
@@ -567,42 +567,42 @@ kbcg19_posterior_sample <- function(period, m, rlist, ztor, fs, vs, z_1, z_2_5, 
     coeffs <- pars_period[seq(2,15)]
   
     if(reg == 1) {
-      coeffs[c(1,2,11)] = pars_period[c(17, 24, 31)]
-      coeffs_attn = pars_period[c(38, 45, 52, 59, 66, 73)]
+      coeffs[c(1,2,11)] <-pars_period[c(17, 24, 31)]
+      coeffs_attn <-pars_period[c(38, 45, 52, 59, 66, 73)]
       delta_ln_z <- 0
       coeffs_z <- c(0,0)
     } else if(reg == 2) {
-      coeffs[c(1,2,11)] = pars_period[c(18, 25, 32)]
-      coeffs_attn = pars_period[c(39, 46, 53, 60, 67, 74)]
+      coeffs[c(1,2,11)] <-pars_period[c(18, 25, 32)]
+      coeffs_attn <-pars_period[c(39, 46, 53, 60, 67, 74)]
       delta_ln_z <- log(z_2_5) - calc_z_from_vs(log(vs), pars_z_casc)
       coeffs_z <- as.numeric(parameters_zmod[parameters_zmod$T == period,c(2,3)])
       coeff_seattle <- parameters_zmod[parameters_zmod$T == period,]$mean_residual_Seattle_basin
       if(Seattle_Basin) {
-        coeffs_z = c(coeff_seattle,0)
+        coeffs_z <-c(coeff_seattle,0)
       }
     } else if(reg == 3) {
-      coeffs[c(1,2,11)] = pars_period[c(19, 26, 33)]
-      coeffs_attn = pars_period[c(40, 47, 54, 61, 68, 75)]
+      coeffs[c(1,2,11)] <-pars_period[c(19, 26, 33)]
+      coeffs_attn <-pars_period[c(40, 47, 54, 61, 68, 75)]
       delta_ln_z <- 0
       coeffs_z <- c(0,0)
     } else if(reg == 4) {
-      coeffs[c(1,2,11)] = pars_period[c(20, 27, 34)]
-      coeffs_attn = pars_period[c(41, 48, 55, 62, 69, 76)]
+      coeffs[c(1,2,11)] <-pars_period[c(20, 27, 34)]
+      coeffs_attn <-pars_period[c(41, 48, 55, 62, 69, 76)]
       delta_ln_z <- log(z_2_5) - calc_z_from_vs(log(vs), pars_z_ja)
       coeffs_z <- as.numeric(parameters_zmod[parameters_zmod$T == period,c(5,6)])
     } else if(reg == 5) {
-      coeffs[c(1,2,11)] = pars_period[c(21, 28, 35)]
-      coeffs_attn = pars_period[c(42, 49, 56, 63, 70, 77)]
+      coeffs[c(1,2,11)] <-pars_period[c(21, 28, 35)]
+      coeffs_attn <-pars_period[c(42, 49, 56, 63, 70, 77)]
       delta_ln_z <- log(z_1) - calc_z_from_vs(log(vs), pars_z_nz)
       coeffs_z <- as.numeric(parameters_zmod[parameters_zmod$T == period,c(7,8)])
     } else if(reg == 6) {
-      coeffs[c(1,2,11)] = pars_period[c(22, 29, 36)]
-      coeffs_attn = pars_period[c(43, 50, 57, 64, 71, 78)]
+      coeffs[c(1,2,11)] <-pars_period[c(22, 29, 36)]
+      coeffs_attn <-pars_period[c(43, 50, 57, 64, 71, 78)]
       delta_ln_z <- 0
       coeffs_z <- c(0,0)
     } else if(reg == 7) {
-      coeffs[c(1,2,11)] = pars_period[c(23, 30, 37)]
-      coeffs_attn = pars_period[c(44, 51, 58, 65, 72, 79)]
+      coeffs[c(1,2,11)] <-pars_period[c(23, 30, 37)]
+      coeffs_attn <-pars_period[c(44, 51, 58, 65, 72, 79)]
       delta_ln_z <- log(z_1) - calc_z_from_vs(log(vs), pars_z_tw)
       coeffs_z <- as.numeric(parameters_zmod[parameters_zmod$T == period,c(9,10)])
     } else if(reg == 0) {
@@ -636,8 +636,8 @@ kbcg19_posterior_sample <- function(period, m, rlist, ztor, fs, vs, z_1, z_2_5, 
     delta_bz <- pars_period[c(80,81)]
     coeffs_nft <- pars_period[c(82,83)]
   
-    mbreak = (1 - fs) * (mb + dmb) + fs * mb
-    zbreak = (1 - fs) * (30 + delta_bz[1]) + fs * (80 + delta_bz[2])
+    mbreak <-(1 - fs) * (mb + dmb) + fs * mb
+    zbreak <-(1 - fs) * (30 + delta_bz[1]) + fs * (80 + delta_bz[2])
   
     med <- kbcg19_med(m, rlist, ztor, fs, vs, fx, delta_ln_z, coeffs, coeffs_attn, coeffs_z, mbreak, zbreak, 
                       k1k2[1], k1k2[2], coeffs_nft[1], coeffs_nft[2], pgarock)
@@ -708,13 +708,19 @@ sprintf('standard deviation of median predictions: %f',y_post$psi)
 ```
 
 ```r
-hist(y_post$samples)
+ggplot(as.data.frame(y_post), aes(x=samples)) + geom_histogram(aes(y=..density..),binwidth=0.05, color="black", fill="white") + geom_density(alpha=.2, fill="#FF6666")
 ```
 
 ![](pictures/example_1-1.png)<!-- -->
 
 ```r
-plot(log(periods),spectrum)
+df <- data.frame(T = periods, psa = as.vector(exp(spectrum)))
+p <- ggplot(df, aes(x = T, y = psa)) + geom_line()
+p + scale_y_log10() + scale_x_log10()
+```
+
+```
+## Warning: Transformation introduced infinite values in continuous x-axis
 ```
 
 ![](pictures/example_1-2.png)<!-- -->
