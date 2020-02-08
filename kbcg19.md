@@ -1,7 +1,7 @@
 ---
 title: "KBCG_NGA_subduction_model"
 author: "Nicolas Kuehn, Yousef Bozorgnia, Ken Campbell, Nick Gregor"
-date: "16 January, 2020"
+date: "30 January, 2020"
 output:
   html_document:
     keep_md: true
@@ -207,61 +207,61 @@ kbcg19 <- function(period, m, rlist, ztor, fs, vs, z_1, z_2_5, fx, mb, reg, Seat
   # calculate rock PGA
   vsrock <- 1100
   pars_period <- as.numeric(parameters[parameters$T == 0.,])
-  coeffs <- pars_period[seq(2,15)]
+  coeffs_pga <- pars_period[seq(2,15)]
   k1k2 <- interp_k1k2(0.)
   dmb <- interp_dmb(0.)
   
   if(reg == 1) {
-    coeffs[c(1,2,11)] <- pars_period[c(17, 24, 31)]
-    coeffs_attn <- pars_period[c(38, 45, 52, 59, 66, 73)]
+    coeffs_pga[c(1,2,11)] <- pars_period[c(17, 24, 31)]
+    coeffs_attn_pga <- pars_period[c(38, 45, 52, 59, 66, 73)]
     delta_ln_z <- 0
-    coeffs_z <- c(0,0)
+    coeffs_z_pga <- c(0,0)
   } else if(reg == 2) {
-    coeffs[c(1,2,11)] <- pars_period[c(18, 25, 32)]
-    coeffs_attn <- pars_period[c(39, 46, 53, 60, 67, 74)]
+    coeffs_pga[c(1,2,11)] <- pars_period[c(18, 25, 32)]
+    coeffs_attn_pga <- pars_period[c(39, 46, 53, 60, 67, 74)]
     delta_ln_z <- 0
-    coeffs_z <- c(0,0)
+    coeffs_z_pga <- c(0,0)
   } else if(reg == 3) {
-    coeffs[c(1,2,11)] <- pars_period[c(19, 26, 33)]
-    coeffs_attn <- pars_period[c(40, 47, 54, 61, 68, 75)]
+    coeffs_pga[c(1,2,11)] <- pars_period[c(19, 26, 33)]
+    coeffs_attn_pga <- pars_period[c(40, 47, 54, 61, 68, 75)]
     delta_ln_z <- 0
-    coeffs_z <- c(0,0)
+    coeffs_z_pga <- c(0,0)
   } else if(reg == 4) {
-    coeffs[c(1,2,11)] <- pars_period[c(20, 27, 34)]
-    coeffs_attn <- pars_period[c(41, 48, 55, 62, 69, 76)]
+    coeffs_pga[c(1,2,11)] <- pars_period[c(20, 27, 34)]
+    coeffs_attn_pga <- pars_period[c(41, 48, 55, 62, 69, 76)]
     delta_ln_z <- 0
-    coeffs_z <- c(0,0)
+    coeffs_z_pga <- c(0,0)
   } else if(reg == 5) {
-    coeffs[c(1,2,11)] <- pars_period[c(21, 28, 35)]
-    coeffs_attn <- pars_period[c(42, 49, 56, 63, 70, 77)]
+    coeffs_pga[c(1,2,11)] <- pars_period[c(21, 28, 35)]
+    coeffs_attn_pga <- pars_period[c(42, 49, 56, 63, 70, 77)]
     delta_ln_z <- 0
-    coeffs_z <- c(0,0)
+    coeffs_z_pga <- c(0,0)
   } else if(reg == 6) {
-    coeffs[c(1,2,11)] <- pars_period[c(22, 29, 36)]
-    coeffs_attn <- pars_period[c(43, 50, 57, 64, 71, 78)]
+    coeffs_pga[c(1,2,11)] <- pars_period[c(22, 29, 36)]
+    coeffs_attn_pga <- pars_period[c(43, 50, 57, 64, 71, 78)]
     delta_ln_z <- 0
-    coeffs_z <- c(0,0)
+    coeffs_z_pga <- c(0,0)
   } else if(reg == 7) {
-    coeffs[c(1,2,11)] <- pars_period[c(23, 30, 37)]
-    coeffs_attn <- pars_period[c(44, 51, 58, 65, 72, 79)]
+    coeffs_pga[c(1,2,11)] <- pars_period[c(23, 30, 37)]
+    coeffs_attn_pga <- pars_period[c(44, 51, 58, 65, 72, 79)]
     delta_ln_z <- 0
-    coeffs_z <- c(0,0)
+    coeffs_z_pga <- c(0,0)
   }
   else if(reg == 0) {
-    coeffs_attn <- pars_period[c(10,10,10,10,9,10,10)]
+    coeffs_attn_pga <- pars_period[c(10,10,10,10,9,10,10)]
     delta_ln_z <- 0
-    coeffs_z <- c(0,0)
+    coeffs_z_pga <- c(0,0)
   }
   
   
   delta_bz <- pars_period[c(80,81)]
-  coeffs_nft <- pars_period[c(82,83)]
+  coeffs_nft_pga <- pars_period[c(82,83)]
   
   mbreak <- (1 - fs) * (mb + dmb) + fs * mb
   zbreak <- (1 - fs) * (30 + delta_bz[1]) + fs * (80 + delta_bz[2])
   
-  pgarock <- exp(kbcg19_med(m, rlist, ztor, fs, vsrock, fx, delta_ln_z, coeffs, coeffs_attn, coeffs_z, mbreak, zbreak, 
-             k1k2[1], k1k2[2], coeffs_nft[1], coeffs_nft[2], 0))
+  pgarock <- exp(kbcg19_med(m, rlist, ztor, fs, vsrock, fx, delta_ln_z, coeffs_pga, coeffs_attn_pga, coeffs_z_pga, mbreak, zbreak, 
+             k1k2[1], k1k2[2], coeffs_nft_pga[1], coeffs_nft_pga[2], 0))
   
   
   # calculate PSA
@@ -324,7 +324,18 @@ kbcg19 <- function(period, m, rlist, ztor, fs, vs, z_1, z_2_5, fx, mb, reg, Seat
   
   med <- kbcg19_med(m, rlist, ztor, fs, vs, fx, delta_ln_z, coeffs, coeffs_attn, coeffs_z, mbreak, zbreak, 
                             k1k2[1], k1k2[2], coeffs_nft[1], coeffs_nft[2], pgarock)
-  return(med)
+  med_pga <- kbcg19_med(m, rlist, ztor, fs, vs, fx, delta_ln_z, coeffs_pga, coeffs_attn_pga, coeffs_z_pga, mbreak, zbreak, 
+                            k1k2[1], k1k2[2], coeffs_nft_pga[1], coeffs_nft_pga[2], pgarock)
+  
+  if(med < med_pga && period <= 0.1) {
+    med <- med_pga
+  }
+  
+  phi <- pars_period[84]
+  tau <- pars_period[85]
+  
+  result <- (list(median = med, phi = phi, tau = tau))
+  return(result)
 }
 ```
 
@@ -516,14 +527,14 @@ y <- kbcg19(per, mag, distance, ztor, fs, vs30, z1, z2, fx, mb, reg_idx)
 
 spectrum <- matrix(nrow = 1, ncol = length(periods))
 for(k in 1:length(periods)) {
-  spectrum[k] <- kbcg19(periods[k], mag, distance, ztor, fs, vs30, z1, z2, fx, mb, reg_idx)
+  spectrum[k] <- kbcg19(periods[k], mag, distance, ztor, fs, vs30, z1, z2, fx, mb, reg_idx)$median
 }
 
-sprintf('median prediction from mean of coefficients: %f',y)
+sprintf('median prediction from mean of coefficients: %f',y$median)
 ```
 
 ```
-## [1] "median prediction from mean of coefficients: -3.338614"
+## [1] "median prediction from mean of coefficients: -3.245313"
 ```
 
 ```r
