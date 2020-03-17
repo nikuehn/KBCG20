@@ -219,6 +219,11 @@ kbcg19 <- function(period, m, rlist, ztor, fs, vs, z_1, z_2_5, fx, mb, reg, Seat
     coeffs_attn_pga <- pars_period[c(39, 46, 53, 60, 67, 74)]
     delta_ln_z <- 0
     coeffs_z_pga <- c(0,0)
+    coeffs_z_pga2 <- as.numeric(parameters_zmod[parameters_zmod$T == period,c(2,3)])
+    coeff_seattle <- parameters_zmod[parameters_zmod$T == period,]$mean_residual_Seattle_basin
+    if(Seattle_Basin) {
+      coeffs_z_pga2 <- c(coeff_seattle,0)
+    }
   } else if(reg == 3) {
     coeffs_pga[c(1,2,11)] <- pars_period[c(19, 26, 33)]
     coeffs_attn_pga <- pars_period[c(40, 47, 54, 61, 68, 75)]
@@ -229,11 +234,13 @@ kbcg19 <- function(period, m, rlist, ztor, fs, vs, z_1, z_2_5, fx, mb, reg, Seat
     coeffs_attn_pga <- pars_period[c(41, 48, 55, 62, 69, 76)]
     delta_ln_z <- 0
     coeffs_z_pga <- c(0,0)
+    coeffs_z_pga2 <- as.numeric(parameters_zmod[parameters_zmod$T == period,c(5,6)])
   } else if(reg == 5) {
     coeffs_pga[c(1,2,11)] <- pars_period[c(21, 28, 35)]
     coeffs_attn_pga <- pars_period[c(42, 49, 56, 63, 70, 77)]
     delta_ln_z <- 0
     coeffs_z_pga <- c(0,0)
+    coeffs_z_pga2 <- as.numeric(parameters_zmod[parameters_zmod$T == period,c(7,8)])
   } else if(reg == 6) {
     coeffs_pga[c(1,2,11)] <- pars_period[c(22, 29, 36)]
     coeffs_attn_pga <- pars_period[c(43, 50, 57, 64, 71, 78)]
@@ -244,9 +251,10 @@ kbcg19 <- function(period, m, rlist, ztor, fs, vs, z_1, z_2_5, fx, mb, reg, Seat
     coeffs_attn_pga <- pars_period[c(44, 51, 58, 65, 72, 79)]
     delta_ln_z <- 0
     coeffs_z_pga <- c(0,0)
+    coeffs_z_pga2 <- as.numeric(parameters_zmod[parameters_zmod$T == period,c(9,10)])
   }
   else if(reg == 0) {
-    coeffs_attn_pga <- pars_period[c(10,10,10,10,9,10,10)]
+    coeffs_attn_pga <- pars_period[c(10,10,10,10,9,10)]
     delta_ln_z <- 0
     coeffs_z_pga <- c(0,0)
   }
@@ -309,7 +317,7 @@ kbcg19 <- function(period, m, rlist, ztor, fs, vs, z_1, z_2_5, fx, mb, reg, Seat
     coeffs_z <- as.numeric(parameters_zmod[parameters_zmod$T == period,c(9,10)])
   }
   else if(reg == 0) {
-    coeffs_attn <- pars_period[c(10,10,10,10,9,10,10)]
+    coeffs_attn <- pars_period[c(10,10,10,10,9,10)]
     delta_ln_z <- 0
     coeffs_z <- c(0,0)
   }
