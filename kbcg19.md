@@ -491,15 +491,15 @@ kbcg19_posterior <- function(period, m, rlist, ztor, fs, vs, z_1, z_2_5, fx, mb,
 periods <- c(0., 0.01, 0.02, 0.03, 0.05, 0.075, 0.1, 0.15, 0.2, 0.25, 0.3, 0.4, 0.5, 0.75, 1., 1.5, 2., 3., 4., 5., 7.5, 10.)
 per <- 0.01
 mag <- 8
-distance <- c(0,200,0)
-ztor <- 20
+distance <- c(0,100,0)
+ztor <- 10
 fs <- 0
 vs30 <- 400
 z1 <- 550
 z2 <- 4000
 fx <- 0
-mb <- 7.56
-reg_idx <- 2
+mb <- 8.
+reg_idx <- 4
 y_post <- kbcg19_posterior(per, mag, distance, ztor, fs, vs30, z1, z2, fx, mb, reg_idx, num_samples = 400)
 y <- kbcg19(per, mag, distance, ztor, fs, vs30, z1, z2, fx, mb, reg_idx)
 
@@ -513,7 +513,7 @@ sprintf('median prediction from mean of coefficients: %f',y$median)
 ```
 
 ```
-## [1] "median prediction from mean of coefficients: -3.702911"
+## [1] "median prediction from mean of coefficients: -2.087867"
 ```
 
 ```r
@@ -537,7 +537,7 @@ sprintf('mean of median predictions: %f',y_post$mean)
 ```
 
 ```
-## [1] "mean of median predictions: -3.705642"
+## [1] "mean of median predictions: -2.176601"
 ```
 
 ```r
@@ -545,7 +545,7 @@ sprintf('median of median predictions: %f',y_post$median)
 ```
 
 ```
-## [1] "median of median predictions: -3.707884"
+## [1] "median of median predictions: -2.165412"
 ```
 
 ```r
@@ -553,7 +553,7 @@ sprintf('standard deviation of median predictions: %f',y_post$psi)
 ```
 
 ```
-## [1] "standard deviation of median predictions: 0.379420"
+## [1] "standard deviation of median predictions: 0.154075"
 ```
 
 ```r
