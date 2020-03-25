@@ -1,13 +1,14 @@
 ---
 title: "KBCG_NGA_subduction_model"
 author: "Nicolas Kuehn, Yousef Bozorgnia, Ken Campbell, Nick Gregor"
-date: "17 March, 2020"
+date: "25 March, 2020"
 output:
   html_document:
     keep_md: true
     toc: true
     toc_depth: 2
     number_sections: true
+    highlight: tango
 ---
 
 
@@ -46,7 +47,7 @@ library(reshape2)
 First, some functions that are needed to do some internal calculations.
 
 
-```r
+```{.r .numberLines}
 # logistc hinge function
 loghinge <- function(x, x0, a, b0, b1, delta) {
   return(a + b0 * (x - x0) + (b1 - b0) * delta * log(1 + exp((x - x0)/delta)))
@@ -116,7 +117,7 @@ The inputs are
 * `pgarock`: median pga prediction at $V_{S30} = 1100$
 
 
-```r
+```{.r .numberLines}
 # function to calculate median prediction
 kbcg19_med <- function(m, rlist, ztor, fs, vs, fx, delta_ln_z, coeffs, coeffs_attn, coeffs_z, mbreak, zbreak, 
                         k1, k2, nft1, nft2, pgarock) {
@@ -141,7 +142,7 @@ kbcg19_med <- function(m, rlist, ztor, fs, vs, fx, delta_ln_z, coeffs, coeffs_at
   fgeom_slab <- fs * (coeffs[4] + coeffs[5] * m) * log(rrup + 10^(nft1 + nft2 * (m - 6)))
   
   fdepth <- (1 - fs) * loghinge(ztor, zbreak, coeffs[12] * (zbreak - refzif), coeffs[12], theta10, deltaz) + 
-           fs * loghinge(ztor, zbreak, coeffs[13] * (zbreak - refzslab), coeffs[12], theta10, deltaz)
+           fs * loghinge(ztor, zbreak, coeffs[13] * (zbreak - refzslab), coeffs[13], theta10, deltaz)
   
   fattn <- fx * as.numeric(rlist %*% coeffs_attn[c(1,2,3)]) + (1 - fx) * as.numeric(rlist %*% coeffs_attn[c(4,5,6)]) + fx * coeffs[14]
   
@@ -190,7 +191,7 @@ This flag determines which basin depth amplification model is used for Cascadia.
 It does not have an impact on any other region.
 
 
-```r
+```{.r .numberLines}
 # function to calculate median prediction using mean coefficients
 kbcg19 <- function(period, m, rlist, ztor, fs, vs, z_1, z_2_5, fx, mb, reg, Seattle_Basin = FALSE) {
   # need to add some checks for input (period, region)
@@ -201,127 +202,114 @@ kbcg19 <- function(period, m, rlist, ztor, fs, vs, z_1, z_2_5, fx, mb, reg, Seat
   pars_z_nz <- c(6.859789675000001, 2.302585092994046, 5.745692775, 0.91563524375, 1.03531412375)
   pars_z_tw <- c(6.30560665, 2.302585092994046, 6.1104992125, 0.43671101999999995, 0.7229702975000001)
   
-  parameters <- read.csv('/Users/nico/GROUNDMOTION/PROJECTS/SUBDUCTION/CBGK/STAN_V16/RESULTS/parameters_allregca_attn3_corrreg_cs_dmb_smoothed_gprf.csv')
-  parameters_zmod <- read.csv('/Users/nico/GROUNDMOTION/PROJECTS/SUBDUCTION/CBGK/STAN_V16/RESULTS/parameters_Z_ALL_allregca_attn3_corrreg_cs_dmb.csv')
+  parameters <- read.csv('DATA/coefficients_KBCG19.csv')
+  parameters_zmod <- read.csv('DATA/parameters_Z_ALL_allregca_attn3_corrreg_cs_dmb.csv')
   
   # calculate rock PGA
+  period_used <- 0.
   vsrock <- 1100
-  pars_period <- as.numeric(parameters[parameters$T == 0.,])
+  pars_period <- as.numeric(parameters[parameters$T == period_used,])
   coeffs_pga <- pars_period[seq(2,15)]
-  k1k2 <- interp_k1k2(0.)
-  dmb <- interp_dmb(0.)
+  k1k2 <- interp_k1k2(period_used)
+  dmb <- interp_dmb(period_used)
+  
+  delta_ln_z <- 0
+  coeffs_z_pga <- c(0,0)
+  coeffs_z_pga2 <- c(0,0)
   
   if(reg == 1) {
     coeffs_pga[c(1,2,11)] <- pars_period[c(17, 24, 31)]
     coeffs_attn_pga <- pars_period[c(38, 45, 52, 59, 66, 73)]
-    delta_ln_z <- 0
-    coeffs_z_pga <- c(0,0)
   } else if(reg == 2) {
     coeffs_pga[c(1,2,11)] <- pars_period[c(18, 25, 32)]
     coeffs_attn_pga <- pars_period[c(39, 46, 53, 60, 67, 74)]
-    delta_ln_z <- 0
-    coeffs_z_pga <- c(0,0)
-    coeffs_z_pga2 <- as.numeric(parameters_zmod[parameters_zmod$T == period,c(2,3)])
-    coeff_seattle <- parameters_zmod[parameters_zmod$T == period,]$mean_residual_Seattle_basin
+    coeffs_z_pga2 <- as.numeric(parameters_zmod[parameters_zmod$T == period_used,c(2,3)])
+    coeff_seattle <- parameters_zmod[parameters_zmod$T == period_used,]$mean_residual_Seattle_basin
     if(Seattle_Basin) {
       coeffs_z_pga2 <- c(coeff_seattle,0)
     }
   } else if(reg == 3) {
     coeffs_pga[c(1,2,11)] <- pars_period[c(19, 26, 33)]
     coeffs_attn_pga <- pars_period[c(40, 47, 54, 61, 68, 75)]
-    delta_ln_z <- 0
-    coeffs_z_pga <- c(0,0)
   } else if(reg == 4) {
     coeffs_pga[c(1,2,11)] <- pars_period[c(20, 27, 34)]
     coeffs_attn_pga <- pars_period[c(41, 48, 55, 62, 69, 76)]
-    delta_ln_z <- 0
-    coeffs_z_pga <- c(0,0)
-    coeffs_z_pga2 <- as.numeric(parameters_zmod[parameters_zmod$T == period,c(5,6)])
+    coeffs_z_pga2 <- as.numeric(parameters_zmod[parameters_zmod$T == period_used,c(5,6)])
   } else if(reg == 5) {
     coeffs_pga[c(1,2,11)] <- pars_period[c(21, 28, 35)]
     coeffs_attn_pga <- pars_period[c(42, 49, 56, 63, 70, 77)]
-    delta_ln_z <- 0
-    coeffs_z_pga <- c(0,0)
-    coeffs_z_pga2 <- as.numeric(parameters_zmod[parameters_zmod$T == period,c(7,8)])
+    coeffs_z_pga2 <- as.numeric(parameters_zmod[parameters_zmod$T == period_used,c(7,8)])
   } else if(reg == 6) {
     coeffs_pga[c(1,2,11)] <- pars_period[c(22, 29, 36)]
     coeffs_attn_pga <- pars_period[c(43, 50, 57, 64, 71, 78)]
-    delta_ln_z <- 0
-    coeffs_z_pga <- c(0,0)
   } else if(reg == 7) {
     coeffs_pga[c(1,2,11)] <- pars_period[c(23, 30, 37)]
     coeffs_attn_pga <- pars_period[c(44, 51, 58, 65, 72, 79)]
-    delta_ln_z <- 0
-    coeffs_z_pga <- c(0,0)
-    coeffs_z_pga2 <- as.numeric(parameters_zmod[parameters_zmod$T == period,c(9,10)])
+    coeffs_z_pga2 <- as.numeric(parameters_zmod[parameters_zmod$T == period_used,c(9,10)])
   }
   else if(reg == 0) {
-    coeffs_attn_pga <- pars_period[c(10,10,10,10,9,10)]
-    delta_ln_z <- 0
-    coeffs_z_pga <- c(0,0)
+    coeffs_attn_pga <- pars_period[c(11, 11, 11, 11, 10, 11)]
   }
   
   
   delta_bz <- pars_period[c(80,81)]
   coeffs_nft_pga <- pars_period[c(82,83)]
   
-  mbreak <- (1 - fs) * (mb + dmb) + fs * mb
-  zbreak <- (1 - fs) * (30 + delta_bz[1]) + fs * (80 + delta_bz[2])
+  mbreak_pga <- (1 - fs) * (mb + dmb) + fs * mb
+  zbreak_pga <- (1 - fs) * (30 + delta_bz[1]) + fs * (80 + delta_bz[2])
+  k1k2_pga <- k1k2
   
-  pgarock <- exp(kbcg19_med(m, rlist, ztor, fs, vsrock, fx, delta_ln_z, coeffs_pga, coeffs_attn_pga, coeffs_z_pga, mbreak, zbreak, 
-             k1k2[1], k1k2[2], coeffs_nft_pga[1], coeffs_nft_pga[2], 0))
+  pgarock <- exp(kbcg19_med(m, rlist, ztor, fs, vsrock, fx, delta_ln_z, coeffs_pga, coeffs_attn_pga,
+                            coeffs_z_pga, mbreak_pga, zbreak_pga, k1k2_pga[1], k1k2_pga[2], coeffs_nft_pga[1],
+                            coeffs_nft_pga[2], 0))
   
   
   # calculate PSA
-  pars_period <- as.numeric(parameters[parameters$T == period,])
+  period_used <- period
+  pars_period <- as.numeric(parameters[parameters$T == period_used,])
   coeffs <- pars_period[seq(2,15)]
-  k1k2 <- interp_k1k2(period)
-  dmb <- interp_dmb(period)
+  k1k2 <- interp_k1k2(period_used)
+  dmb <- interp_dmb(period_used)
+  
+  delta_ln_z <- 0
+  coeffs_z <- c(0,0)
   
   if(reg == 1) {
     coeffs[c(1,2,11)] <- pars_period[c(17, 24, 31)]
     coeffs_attn <- pars_period[c(38, 45, 52, 59, 66, 73)]
-    delta_ln_z <- 0
-    coeffs_z <- c(0,0)
   } else if(reg == 2) {
     coeffs[c(1,2,11)] <- pars_period[c(18, 25, 32)]
     coeffs_attn <- pars_period[c(39, 46, 53, 60, 67, 74)]
-    delta_ln_z <- log(z_2_5) - calc_z_from_vs(log(vs), pars_z_casc)
-    coeffs_z <- as.numeric(parameters_zmod[parameters_zmod$T == period,c(2,3)])
-    coeff_seattle <- parameters_zmod[parameters_zmod$T == period,]$mean_residual_Seattle_basin
+    delta_ln_z <- log(z_2_5) - calc_z_from_vs(vs, pars_z_casc)
+    coeffs_z <- as.numeric(parameters_zmod[parameters_zmod$T == period_used,c(2,3)])
+    coeff_seattle <- parameters_zmod[parameters_zmod$T == period_used,]$mean_residual_Seattle_basin
     if(Seattle_Basin) {
       coeffs_z <- c(coeff_seattle,0)
     }
   } else if(reg == 3) {
     coeffs[c(1,2,11)] <- pars_period[c(19, 26, 33)]
     coeffs_attn <- pars_period[c(40, 47, 54, 61, 68, 75)]
-    delta_ln_z <- 0
-    coeffs_z <- c(0,0)
   } else if(reg == 4) {
     coeffs[c(1,2,11)] <- pars_period[c(20, 27, 34)]
     coeffs_attn <- pars_period[c(41, 48, 55, 62, 69, 76)]
-    delta_ln_z <- log(z_2_5) - calc_z_from_vs(log(vs), pars_z_ja)
-    coeffs_z <- as.numeric(parameters_zmod[parameters_zmod$T == period,c(5,6)])
+    delta_ln_z <- log(z_2_5) - calc_z_from_vs(vs, pars_z_ja)
+    coeffs_z <- as.numeric(parameters_zmod[parameters_zmod$T == period_used,c(5,6)])
   } else if(reg == 5) {
     coeffs[c(1,2,11)] <- pars_period[c(21, 28, 35)]
     coeffs_attn <- pars_period[c(42, 49, 56, 63, 70, 77)]
-    delta_ln_z <- log(z_1) - calc_z_from_vs(log(vs), pars_z_nz)
-    coeffs_z <- as.numeric(parameters_zmod[parameters_zmod$T == period,c(7,8)])
+    delta_ln_z <- log(z_1) - calc_z_from_vs(vs, pars_z_nz)
+    coeffs_z <- as.numeric(parameters_zmod[parameters_zmod$T == period_used,c(7,8)])
   } else if(reg == 6) {
     coeffs[c(1,2,11)] <- pars_period[c(22, 29, 36)]
     coeffs_attn <- pars_period[c(43, 50, 57, 64, 71, 78)]
-    delta_ln_z <- 0
-    coeffs_z <- c(0,0)
   } else if(reg == 7) {
     coeffs[c(1,2,11)] <- pars_period[c(23, 30, 37)]
     coeffs_attn <- pars_period[c(44, 51, 58, 65, 72, 79)]
-    delta_ln_z <- log(z_1) - calc_z_from_vs(log(vs), pars_z_tw)
-    coeffs_z <- as.numeric(parameters_zmod[parameters_zmod$T == period,c(9,10)])
+    delta_ln_z <- log(z_1) - calc_z_from_vs(vs, pars_z_tw)
+    coeffs_z <- as.numeric(parameters_zmod[parameters_zmod$T == period_used,c(9,10)])
   }
   else if(reg == 0) {
-    coeffs_attn <- pars_period[c(10,10,10,10,9,10)]
-    delta_ln_z <- 0
-    coeffs_z <- c(0,0)
+    coeffs_attn <- pars_period[c(11, 11, 11, 11, 10, 11)]
   }
   
   delta_bz <- pars_period[c(80,81)]
@@ -330,10 +318,12 @@ kbcg19 <- function(period, m, rlist, ztor, fs, vs, z_1, z_2_5, fx, mb, reg, Seat
   mbreak <- (1 - fs) * (mb + dmb) + fs * mb
   zbreak <- (1 - fs) * (30 + delta_bz[1]) + fs * (80 + delta_bz[2])
   
+  med_pga <- kbcg19_med(m, rlist, ztor, fs, vs, fx, delta_ln_z, coeffs_pga, coeffs_attn_pga, coeffs_z_pga2,
+                        mbreak_pga, zbreak_pga, k1k2_pga[1], k1k2_pga[2], coeffs_nft_pga[1], coeffs_nft_pga[2], pgarock)
+  
   med <- kbcg19_med(m, rlist, ztor, fs, vs, fx, delta_ln_z, coeffs, coeffs_attn, coeffs_z, mbreak, zbreak, 
-                            k1k2[1], k1k2[2], coeffs_nft[1], coeffs_nft[2], pgarock)
-  med_pga <- kbcg19_med(m, rlist, ztor, fs, vs, fx, delta_ln_z, coeffs_pga, coeffs_attn_pga, coeffs_z_pga, mbreak, zbreak, 
-                            k1k2[1], k1k2[2], coeffs_nft_pga[1], coeffs_nft_pga[2], pgarock)
+                    k1k2[1], k1k2[2], coeffs_nft[1], coeffs_nft[2], pgarock)
+
   
   if(med < med_pga && period <= 0.1) {
     med <- med_pga
@@ -360,9 +350,8 @@ The second function is implemented to demonstrate how to perform the sampling, (
 To get reproducible results, one should use the function with presampled global coefficients.
 
 
-```r
+```{.r .numberLines}
 # function to calculate median prediction using posterior distributions
-# still need to add basin depth term
 kbcg19_posterior <- function(period, m, rlist, ztor, fs, vs, z_1, z_2_5, fx, mb, reg, num_samples = 100, Seattle_Basin = FALSE) {
   # need to add some checks for input (period, region)
   
@@ -372,57 +361,43 @@ kbcg19_posterior <- function(period, m, rlist, ztor, fs, vs, z_1, z_2_5, fx, mb,
   pars_z_nz <- c(6.859789675000001, 2.302585092994046, 5.745692775, 0.91563524375, 1.03531412375)
   pars_z_tw <- c(6.30560665, 2.302585092994046, 6.1104992125, 0.43671101999999995, 0.7229702975000001)
   
-  parameters <- read.csv('/Users/nico/GROUNDMOTION/PROJECTS/SUBDUCTION/CBGK/STAN_V16/RESULTS/parameters_allregca_attn3_corrreg_cs_dmb_smoothed_gprf.csv')
-  parameters_zmod <- read.csv('/Users/nico/GROUNDMOTION/PROJECTS/SUBDUCTION/CBGK/STAN_V16/RESULTS/parameters_Z_ALL_allregca_attn3_corrreg_cs_dmb.csv')
+  parameters <- read.csv('DATA/coefficients_KBCG19.csv')
+  parameters_zmod <- read.csv('DATA/parameters_Z_ALL_allregca_attn3_corrreg_cs_dmb.csv')
   
   # calculate rock PGA
+  period_used <- 0.
   vsrock <- 1100
-  pars_period <- as.numeric(parameters[parameters$T == 0.,])
+  pars_period <- as.numeric(parameters[parameters$T == period_used,])
   coeffs <- pars_period[seq(2,15)]
-  k1k2 <- interp_k1k2(0.)
-  dmb <- interp_dmb(0.)
+  k1k2 <- interp_k1k2(period_used)
+  dmb <- interp_dmb(period_used)
+
+  delta_ln_z <- 0
+  coeffs_z <- c(0,0)
   
   if(reg == 1) {
     coeffs[c(1,2,11)] <- pars_period[c(17, 24, 31)]
     coeffs_attn <- pars_period[c(38, 45, 52, 59, 66, 73)]
-    delta_ln_z <- 0
-    coeffs_z <- c(0,0)
   } else if(reg == 2) {
     coeffs[c(1,2,11)] <- pars_period[c(18, 25, 32)]
     coeffs_attn <- pars_period[c(39, 46, 53, 60, 67, 74)]
-    delta_ln_z <- 0
-    coeffs_z <- c(0,0)
   } else if(reg == 3) {
     coeffs[c(1,2,11)] <- pars_period[c(19, 26, 33)]
     coeffs_attn <- pars_period[c(40, 47, 54, 61, 68, 75)]
-    delta_ln_z <- 0
-    coeffs_z <- c(0,0)
   } else if(reg == 4) {
     coeffs[c(1,2,11)] <- pars_period[c(20, 27, 34)]
     coeffs_attn <- pars_period[c(41, 48, 55, 62, 69, 76)]
-    delta_ln_z <- 0
-    coeffs_z <- c(0,0)
   } else if(reg == 5) {
     coeffs[c(1,2,11)] <- pars_period[c(21, 28, 35)]
     coeffs_attn <- pars_period[c(42, 49, 56, 63, 70, 77)]
-    delta_ln_z <- 0
-    coeffs_z <- c(0,0)
   } else if(reg == 6) {
     coeffs[c(1,2,11)] <- pars_period[c(22, 29, 36)]
     coeffs_attn <- pars_period[c(43, 50, 57, 64, 71, 78)]
-    delta_ln_z <- 0
-    coeffs_z <- c(0,0)
   } else if(reg == 7) {
     coeffs[c(1,2,11)] <- pars_period[c(23, 30, 37)]
     coeffs_attn <- pars_period[c(44, 51, 58, 65, 72, 79)]
-    delta_ln_z <- 0
-    coeffs_z <- c(0,0)
   } else if(reg == 0) {
-    coeffs[c(1,2,11)] <- pars_period[c(172, 173, 174)]
-    coeffs_attn <- pars_period[c(175, 176, 177, 178, 179, 180)]
-    
-    delta_ln_z <- 0
-    coeffs_z <- c(0,0)
+    coeffs_attn <- pars_period[c(11, 11, 11, 11, 10, 11)]
   }
   
   
@@ -437,61 +412,56 @@ kbcg19_posterior <- function(period, m, rlist, ztor, fs, vs, z_1, z_2_5, fx, mb,
   
   
   # calculate PSA
-  parameters_posterior <- read.csv(sprintf('/Users/nico/GROUNDMOTION/PROJECTS/SUBDUCTION/CBGK/STAN_V16/RESULTS/CSV_allregca_attn3_corrreg_cs_dmb_smoothed_gprf/coefficients_KBCG19_global_smoothed_gprf_T%05.2f.csv',period))
-  k1k2 <- interp_k1k2(period)
-  dmb <- interp_dmb(period)
+  period_used <- period
+  parameters_posterior <- read.csv(sprintf('DATA/posterior_coefficients_KBCG19_T%05.2f.csv',period_used))
+  k1k2 <- interp_k1k2(period_used)
+  dmb <- interp_dmb(period_used)
   
   med_predictions <- matrix(nrow = num_samples, ncol = 1)
   
   for(k in 1:num_samples) {
     pars_period <- as.numeric(parameters_posterior[k,])
     coeffs <- pars_period[seq(2,15)]
+    
+    delta_ln_z <- 0
+    coeffs_z <- c(0,0)
   
     if(reg == 1) {
       coeffs[c(1,2,11)] <-pars_period[c(17, 24, 31)]
       coeffs_attn <-pars_period[c(38, 45, 52, 59, 66, 73)]
-      delta_ln_z <- 0
-      coeffs_z <- c(0,0)
     } else if(reg == 2) {
       coeffs[c(1,2,11)] <-pars_period[c(18, 25, 32)]
       coeffs_attn <-pars_period[c(39, 46, 53, 60, 67, 74)]
-      delta_ln_z <- log(z_2_5) - calc_z_from_vs(log(vs), pars_z_casc)
-      coeffs_z <- as.numeric(parameters_zmod[parameters_zmod$T == period,c(2,3)])
-      coeff_seattle <- parameters_zmod[parameters_zmod$T == period,]$mean_residual_Seattle_basin
+      delta_ln_z <- log(z_2_5) - calc_z_from_vs(vs, pars_z_casc)
+      coeffs_z <- as.numeric(parameters_zmod[parameters_zmod$T == period_used,c(2,3)])
+      coeff_seattle <- parameters_zmod[parameters_zmod$T == period_used,]$mean_residual_Seattle_basin
       if(Seattle_Basin) {
         coeffs_z <-c(coeff_seattle,0)
       }
     } else if(reg == 3) {
       coeffs[c(1,2,11)] <-pars_period[c(19, 26, 33)]
       coeffs_attn <-pars_period[c(40, 47, 54, 61, 68, 75)]
-      delta_ln_z <- 0
-      coeffs_z <- c(0,0)
     } else if(reg == 4) {
       coeffs[c(1,2,11)] <-pars_period[c(20, 27, 34)]
       coeffs_attn <-pars_period[c(41, 48, 55, 62, 69, 76)]
-      delta_ln_z <- log(z_2_5) - calc_z_from_vs(log(vs), pars_z_ja)
-      coeffs_z <- as.numeric(parameters_zmod[parameters_zmod$T == period,c(5,6)])
+      delta_ln_z <- log(z_2_5) - calc_z_from_vs(vs, pars_z_ja)
+      coeffs_z <- as.numeric(parameters_zmod[parameters_zmod$T == period_used,c(5,6)])
     } else if(reg == 5) {
       coeffs[c(1,2,11)] <-pars_period[c(21, 28, 35)]
       coeffs_attn <-pars_period[c(42, 49, 56, 63, 70, 77)]
-      delta_ln_z <- log(z_1) - calc_z_from_vs(log(vs), pars_z_nz)
-      coeffs_z <- as.numeric(parameters_zmod[parameters_zmod$T == period,c(7,8)])
+      delta_ln_z <- log(z_1) - calc_z_from_vs(vs, pars_z_nz)
+      coeffs_z <- as.numeric(parameters_zmod[parameters_zmod$T == period_used,c(7,8)])
     } else if(reg == 6) {
       coeffs[c(1,2,11)] <-pars_period[c(22, 29, 36)]
       coeffs_attn <-pars_period[c(43, 50, 57, 64, 71, 78)]
-      delta_ln_z <- 0
-      coeffs_z <- c(0,0)
     } else if(reg == 7) {
       coeffs[c(1,2,11)] <-pars_period[c(23, 30, 37)]
       coeffs_attn <-pars_period[c(44, 51, 58, 65, 72, 79)]
-      delta_ln_z <- log(z_1) - calc_z_from_vs(log(vs), pars_z_tw)
-      coeffs_z <- as.numeric(parameters_zmod[parameters_zmod$T == period,c(9,10)])
+      delta_ln_z <- log(z_1) - calc_z_from_vs(vs, pars_z_tw)
+      coeffs_z <- as.numeric(parameters_zmod[parameters_zmod$T == period_used,c(9,10)])
     } else if(reg == 0) {
       coeffs[c(1,2,11)] <-pars_period[c(172, 173, 174)]
-      coeffs_attn <-pars_period[c(175, 176, 177, 178, 179, 180)]
-      
-      delta_ln_z <- 0
-      coeffs_z <- c(0,0)
+      coeffs_attn <- pars_period[c(175, 176, 177, 178, 179, 180)]
     }
     
     
@@ -520,29 +490,46 @@ kbcg19_posterior <- function(period, m, rlist, ztor, fs, vs, z_1, z_2_5, fx, mb,
 ```r
 periods <- c(0., 0.01, 0.02, 0.03, 0.05, 0.075, 0.1, 0.15, 0.2, 0.25, 0.3, 0.4, 0.5, 0.75, 1., 1.5, 2., 3., 4., 5., 7.5, 10.)
 per <- 0.01
-mag <- 7
-distance <- c(0,100,0)
-ztor <- 10
+mag <- 8
+distance <- c(0,200,0)
+ztor <- 20
 fs <- 0
 vs30 <- 400
 z1 <- 550
 z2 <- 4000
 fx <- 0
-mb <- 8
-reg_idx <- 4
+mb <- 7.56
+reg_idx <- 2
 y_post <- kbcg19_posterior(per, mag, distance, ztor, fs, vs30, z1, z2, fx, mb, reg_idx, num_samples = 400)
 y <- kbcg19(per, mag, distance, ztor, fs, vs30, z1, z2, fx, mb, reg_idx)
 
-spectrum <- matrix(nrow = 1, ncol = length(periods))
+spectrum <- matrix(nrow = length(periods), ncol = 4)
 for(k in 1:length(periods)) {
-  spectrum[k] <- kbcg19(periods[k], mag, distance, ztor, fs, vs30, z1, z2, fx, mb, reg_idx)$median
+  pred = kbcg19(periods[k], mag, distance, ztor, fs, vs30, z1, z2, fx, mb, reg_idx)
+  spectrum[k,] <- c(pred$median, pred$phi, pred$tau, sqrt(pred$phi^2 + pred$tau^2))
 }
 
 sprintf('median prediction from mean of coefficients: %f',y$median)
 ```
 
 ```
-## [1] "median prediction from mean of coefficients: -3.245313"
+## [1] "median prediction from mean of coefficients: -3.702911"
+```
+
+```r
+sprintf('phi: %f',y$phi)
+```
+
+```
+## [1] "phi: 0.599596"
+```
+
+```r
+sprintf('tau: %f',y$tau)
+```
+
+```
+## [1] "tau: 0.494230"
 ```
 
 ```r
@@ -550,7 +537,7 @@ sprintf('mean of median predictions: %f',y_post$mean)
 ```
 
 ```
-## [1] "mean of median predictions: -3.342419"
+## [1] "mean of median predictions: -3.705642"
 ```
 
 ```r
@@ -558,7 +545,7 @@ sprintf('median of median predictions: %f',y_post$median)
 ```
 
 ```
-## [1] "median of median predictions: -3.341058"
+## [1] "median of median predictions: -3.707884"
 ```
 
 ```r
@@ -566,7 +553,7 @@ sprintf('standard deviation of median predictions: %f',y_post$psi)
 ```
 
 ```
-## [1] "standard deviation of median predictions: 0.136664"
+## [1] "standard deviation of median predictions: 0.379420"
 ```
 
 ```r
@@ -576,7 +563,7 @@ ggplot(as.data.frame(y_post), aes(x=samples)) + geom_histogram(aes(y=..density..
 ![](pictures/example_1-1.png)<!-- -->
 
 ```r
-df <- data.frame(T = periods, psa = as.vector(exp(spectrum)))
+df <- data.frame(T = periods, psa = as.vector(exp(spectrum[,1])))
 p <- ggplot(df, aes(x = T, y = psa)) + geom_line()
 p + scale_y_log10() + scale_x_log10()
 ```
@@ -586,6 +573,19 @@ p + scale_y_log10() + scale_x_log10()
 ```
 
 ![](pictures/example_1-2.png)<!-- -->
+
+```r
+df <- data.frame(T = periods, phi = as.vector(spectrum[,2]), tau = as.vector(spectrum[,3]), sigma = as.vector(spectrum[,4]))
+df.melt <- melt(df,id=1)
+p <- ggplot(df.melt)+geom_line(aes(x=T, y=value, color=variable, linetype=variable))
+p + scale_x_log10()
+```
+
+```
+## Warning: Transformation introduced infinite values in continuous x-axis
+```
+
+![](pictures/example_1-3.png)<!-- -->
 
 ```r
 spectrum_unc <- matrix(ncol = 6, nrow = length(periods))
@@ -603,4 +603,4 @@ p + scale_y_log10() + scale_x_log10()
 ## Warning: Transformation introduced infinite values in continuous x-axis
 ```
 
-![](pictures/example_1-3.png)<!-- -->
+![](pictures/example_1-4.png)<!-- -->
