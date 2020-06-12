@@ -1,6 +1,6 @@
-# KBCG19
+# KBCG20
 
-This is a repository that includes files/information for the BGA subduction ground-motion model of Kuehn, Bozorgnia, Campbell, and Gregor (2019) (KBCG19). The repository contains the following directories:
+This is a repository that includes files/information for the BGA subduction ground-motion model of Kuehn, Bozorgnia, Campbell, and Gregor (2020) (KBCG20). The repository contains the following directories:
 
 * DATA: contains files with coefficients
   * posterior_coefficients_KBCG_TXX.XX.csv: contains 800 sets of coefficients/parameters for one period.
@@ -10,4 +10,4 @@ This is a repository that includes files/information for the BGA subduction grou
 * Stan: contains Stan files for regression (see http://mc-stan.org for info)
 * pictures: contains pictures used in R-examples
 
-The files KBCG19 contain an R-implementation of the functional form for KBCG19.
+The files KBCG20 contain an R-implementation of the functional form for KBCG20.
