@@ -1,7 +1,7 @@
 ---
 title: "KBCG_NGA_subduction_model"
 author: "Nicolas Kuehn, Yousef Bozorgnia, Ken Campbell, Nick Gregor"
-date: "31 August, 2020"
+date: "25 September, 2020"
 output:
   html_document:
     keep_md: true
@@ -59,14 +59,12 @@ interp_dmb <- function(period, reg) {
   if(reg == 4 || reg == 6) {
     ap <- approxfun(c(log(0.01),log(1),log(3),log(10)), c(0,0,-0.4,-0.4), rule = 2)
   
-    if(period == 0) {
+    if(period == 0 || period == -1) {
       return (ap(log(0.01)))
-    }
-    else {
+    } else {
       return (ap(log(period)))
     }
-  }
-  else {
+  } else {
     return (0)
   }
 }
@@ -85,11 +83,9 @@ interp_k1k2 <- function(period) {
   
   if(period == -1) {
     return(c(400., -1.955))
-  }
-  else if(period == 0) {
+  } else if(period == 0) {
     return (c(ap_k1(log(0.005)),ap_k2(log(0.005))))
-  }
-  else {
+  } else {
     return (c(ap_k1(log(period)),ap_k2(log(period))))
   }
 }
@@ -255,12 +251,10 @@ kbcg20 <- function(period, m, rrup, ztor, fs, vs, z_1, z_2_5, mb, reg, Seattle_B
   if (reg == 3 || reg == 6) {
     r1 = FractionBackArc * rrup
     r3 = 0
-  }
-  else if (reg == 4) {
+  } else if (reg == 4) {
     r1 = FractionBackArc * rrup
     r3 = FractionNankai * rrup
-  }
-  else {
+  } else {
     r1 = 0
     r3 = 0
   }
@@ -271,11 +265,9 @@ kbcg20 <- function(period, m, rrup, ztor, fs, vs, z_1, z_2_5, mb, reg, Seattle_B
   fx = 1
   if (r1 == 0 && r2 == 0) {
     fx = 0
-  }
-  else if (r1 == 0 && r3 == 0) {
+  } else if (r1 == 0 && r3 == 0) {
     fx = 0
-  }
-  else if (r2 == 0 && r3 == 0) {
+  } else if (r2 == 0 && r3 == 0) {
     fx = 0
   }
   
@@ -283,7 +275,7 @@ kbcg20 <- function(period, m, rrup, ztor, fs, vs, z_1, z_2_5, mb, reg, Seattle_B
   period_used <- 0.
   vsrock = 1100
   pars_period <- parameters[parameters$T == period_used,]
-  coeffs_pga <- pars_period %>% select(mu_theta_1_if:theta_6xc)
+  coeffs_pga <- pars_period %>% dplyr::select(mu_theta_1_if:theta_6xc)
   k1k2 <- interp_k1k2(period_used)
   dmb <- interp_dmb(period_used, reg)
   
@@ -292,41 +284,41 @@ kbcg20 <- function(period, m, rrup, ztor, fs, vs, z_1, z_2_5, mb, reg, Seattle_B
   coeffs_z_pga2 <- c(0,0)
   
   if(reg == 1) {
-    coeffs_pga[c(1,2,11)] <- pars_period %>% select(theta_1_if_reg_Al,theta_1_slab_reg_Al,theta_7_reg_Al)
-    coeffs_attn_pga <- pars_period %>% select(theta_6_x1_reg_Al, theta_6_x2_reg_Al, theta_6_x3_reg_Al,
+    coeffs_pga[c(1,2,11)] <- pars_period %>% dplyr::select(theta_1_if_reg_Al,theta_1_slab_reg_Al,theta_7_reg_Al)
+    coeffs_attn_pga <- pars_period %>% dplyr::select(theta_6_x1_reg_Al, theta_6_x2_reg_Al, theta_6_x3_reg_Al,
                                          theta_6_1_reg_Al, theta_6_2_reg_Al, theta_6_3_reg_Al)
   } else if(reg == 2) {
-    coeffs_pga[c(1,2,11)] <- pars_period %>% select(theta_1_if_reg_Ca,theta_1_slab_reg_Ca,theta_7_reg_Ca)
-    coeffs_attn_pga <- pars_period %>% select(theta_6_x1_reg_Ca, theta_6_x2_reg_Ca, theta_6_x3_reg_Ca,
+    coeffs_pga[c(1,2,11)] <- pars_period %>% dplyr::select(theta_1_if_reg_Ca,theta_1_slab_reg_Ca,theta_7_reg_Ca)
+    coeffs_attn_pga <- pars_period %>% dplyr::select(theta_6_x1_reg_Ca, theta_6_x2_reg_Ca, theta_6_x3_reg_Ca,
                                          theta_6_1_reg_Ca, theta_6_2_reg_Ca, theta_6_3_reg_Ca)
-    coeffs_z_pga2 <- pars_period %>% select(theta_11_Ca, theta_12_Ca)
-    coeff_seattle <- pars_period %>% select(mean_residual_Seattle_basin)
+    coeffs_z_pga2 <- pars_period %>% dplyr::select(theta_11_Ca, theta_12_Ca)
+    coeff_seattle <- pars_period %>% dplyr::select(mean_residual_Seattle_basin)
     if(Seattle_Basin) {
       coeffs_z_pga2 <- c(coeff_seattle,0)
     }
   } else if(reg == 3) {
-    coeffs_pga[c(1,2,11)] <- pars_period %>% select(theta_1_if_reg_CAM,theta_1_slab_reg_CAM,theta_7_reg_CAM)
-    coeffs_attn_pga = coeffs_attn = pars_period %>% select(theta_6_x1_reg_CAM, theta_6_x2_reg_CAM, theta_6_x3_reg_CAM,
+    coeffs_pga[c(1,2,11)] <- pars_period %>% dplyr::select(theta_1_if_reg_CAM,theta_1_slab_reg_CAM,theta_7_reg_CAM)
+    coeffs_attn_pga = coeffs_attn = pars_period %>% dplyr::select(theta_6_x1_reg_CAM, theta_6_x2_reg_CAM, theta_6_x3_reg_CAM,
                                                        theta_6_1_reg_CAM, theta_6_2_reg_CAM, theta_6_3_reg_CAM)
   } else if(reg == 4) {
-    coeffs_pga[c(1,2,11)] <- pars_period %>% select(theta_1_if_reg_Ja,theta_1_slab_reg_Ja,theta_7_reg_Ja)
-    coeffs_attn_pga = pars_period %>% select(theta_6_x1_reg_Ja, theta_6_x2_reg_Ja, theta_6_x3_reg_Ja,
+    coeffs_pga[c(1,2,11)] <- pars_period %>% dplyr::select(theta_1_if_reg_Ja,theta_1_slab_reg_Ja,theta_7_reg_Ja)
+    coeffs_attn_pga = pars_period %>% dplyr::select(theta_6_x1_reg_Ja, theta_6_x2_reg_Ja, theta_6_x3_reg_Ja,
                                                        theta_6_1_reg_Ja, theta_6_2_reg_Ja, theta_6_3_reg_Ja)
-    coeffs_z_pga2 <- pars_period %>% select(theta_11_Ja, theta_12_Ja)
+    coeffs_z_pga2 <- pars_period %>% dplyr::select(theta_11_Ja, theta_12_Ja)
   } else if(reg == 5) {
-    coeffs_pga[c(1,2,11)] <- pars_period %>% select(theta_1_if_reg_NZ,theta_1_slab_reg_NZ,theta_7_reg_NZ)
-    coeffs_attn_pga = coeffs_attn = pars_period %>% select(theta_6_x1_reg_NZ, theta_6_x2_reg_NZ, theta_6_x3_reg_NZ,
+    coeffs_pga[c(1,2,11)] <- pars_period %>% dplyr::select(theta_1_if_reg_NZ,theta_1_slab_reg_NZ,theta_7_reg_NZ)
+    coeffs_attn_pga = coeffs_attn = pars_period %>% dplyr::select(theta_6_x1_reg_NZ, theta_6_x2_reg_NZ, theta_6_x3_reg_NZ,
                                                        theta_6_1_reg_NZ, theta_6_2_reg_NZ, theta_6_3_reg_NZ)
-    coeffs_z_pga2 <- pars_period %>% select(theta_11_NZ, theta_12_NZ)
+    coeffs_z_pga2 <- pars_period %>% dplyr::select(theta_11_NZ, theta_12_NZ)
   } else if(reg == 6) {
-    coeffs_pga[c(1,2,11)] <- pars_period %>% select(theta_1_if_reg_SA,theta_1_slab_reg_SA,theta_7_reg_SA)
-    coeffs_attn_pga = pars_period %>% select(theta_6_x1_reg_SA, theta_6_x2_reg_SA, theta_6_x3_reg_SA,
+    coeffs_pga[c(1,2,11)] <- pars_period %>% dplyr::select(theta_1_if_reg_SA,theta_1_slab_reg_SA,theta_7_reg_SA)
+    coeffs_attn_pga = pars_period %>% dplyr::select(theta_6_x1_reg_SA, theta_6_x2_reg_SA, theta_6_x3_reg_SA,
                                                        theta_6_1_reg_SA, theta_6_2_reg_SA, theta_6_3_reg_SA)
   } else if(reg == 7) {
-    coeffs_pga[c(1,2,11)] <- pars_period %>% select(theta_1_if_reg_Tw,theta_1_slab_reg_Tw,theta_7_reg_Tw)
-    coeffs_attn_pga  = pars_period %>% select(theta_6_x1_reg_Tw, theta_6_x2_reg_Tw, theta_6_x3_reg_Tw,
+    coeffs_pga[c(1,2,11)] <- pars_period %>% dplyr::select(theta_1_if_reg_Tw,theta_1_slab_reg_Tw,theta_7_reg_Tw)
+    coeffs_attn_pga  = pars_period %>% dplyr::select(theta_6_x1_reg_Tw, theta_6_x2_reg_Tw, theta_6_x3_reg_Tw,
                                                        theta_6_1_reg_Tw, theta_6_2_reg_Tw, theta_6_3_reg_Tw)
-    coeffs_z_pga2 <- pars_period %>% select(theta_11_Tw, theta_12_Tw)
+    coeffs_z_pga2 <- pars_period %>% dplyr::select(theta_11_Tw, theta_12_Tw)
   } else if(reg == 0) {
     theta_6 <- pars_period$mu_theta_6
     theta_6b <- pars_period$mu_theta_6b
@@ -334,8 +326,8 @@ kbcg20 <- function(period, m, rrup, ztor, fs, vs, z_1, z_2_5, mb, reg, Seattle_B
   }
   
   
-  delta_bz <- as.numeric(pars_period %>% select(dzb_if, dzb_slab))
-  coeffs_nft_pga <- as.numeric(pars_period %>% select(nft_1, nft_2))
+  delta_bz <- as.numeric(pars_period %>% dplyr::select(dzb_if, dzb_slab))
+  coeffs_nft_pga <- as.numeric(pars_period %>% dplyr::select(nft_1, nft_2))
   
   mbreak_pga <- (1 - fs) * (mb + dmb) + fs * mb
   zbreak_pga <- (1 - fs) * (30 + delta_bz[1]) + fs * (80 + delta_bz[2])
@@ -352,7 +344,7 @@ kbcg20 <- function(period, m, rrup, ztor, fs, vs, z_1, z_2_5, mb, reg, Seattle_B
   # calculate PSA
   period_used <- period
   pars_period <- parameters[parameters$T == period_used,]
-  coeffs <- pars_period %>% select(mu_theta_1_if:theta_6xc)
+  coeffs <- pars_period %>% dplyr::select(mu_theta_1_if:theta_6xc)
   k1k2 <- interp_k1k2(period_used)
   dmb <- interp_dmb(period_used, reg)
   
@@ -360,54 +352,53 @@ kbcg20 <- function(period, m, rrup, ztor, fs, vs, z_1, z_2_5, mb, reg, Seattle_B
   coeffs_z <- c(0,0)
   
   if(reg == 1) {
-    coeffs[c(1,2,11)] <- pars_period %>% select(theta_1_if_reg_Al,theta_1_slab_reg_Al,theta_7_reg_Al)
-    coeffs_attn <- pars_period %>% select(theta_6_x1_reg_Al, theta_6_x2_reg_Al, theta_6_x3_reg_Al,
+    coeffs[c(1,2,11)] <- pars_period %>% dplyr::select(theta_1_if_reg_Al,theta_1_slab_reg_Al,theta_7_reg_Al)
+    coeffs_attn <- pars_period %>% dplyr::select(theta_6_x1_reg_Al, theta_6_x2_reg_Al, theta_6_x3_reg_Al,
                                          theta_6_1_reg_Al, theta_6_2_reg_Al, theta_6_3_reg_Al)
   } else if(reg == 2) {
-    coeffs[c(1,2,11)] <- pars_period %>% select(theta_1_if_reg_Ca,theta_1_slab_reg_Ca,theta_7_reg_Ca)
-    coeffs_attn <- pars_period %>% select(theta_6_x1_reg_Ca, theta_6_x2_reg_Ca, theta_6_x3_reg_Ca,
+    coeffs[c(1,2,11)] <- pars_period %>% dplyr::select(theta_1_if_reg_Ca,theta_1_slab_reg_Ca,theta_7_reg_Ca)
+    coeffs_attn <- pars_period %>% dplyr::select(theta_6_x1_reg_Ca, theta_6_x2_reg_Ca, theta_6_x3_reg_Ca,
                                          theta_6_1_reg_Ca, theta_6_2_reg_Ca, theta_6_3_reg_Ca)
     delta_ln_z <- log(z_2_5) - calc_z_from_vs(vs, pars_z_casc)
-    coeffs_z <- pars_period %>% select(theta_11_Ca, theta_12_Ca)
-    coeff_seattle <- pars_period %>% select(mean_residual_Seattle_basin)
+    coeffs_z <- pars_period %>% dplyr::select(theta_11_Ca, theta_12_Ca)
+    coeff_seattle <- pars_period %>% dplyr::select(mean_residual_Seattle_basin)
     if(Seattle_Basin) {
       coeffs_z <- c(coeff_seattle,0)
     }
   } else if(reg == 3) {
-    coeffs[c(1,2,11)] <- pars_period %>% select(theta_1_if_reg_CAM,theta_1_slab_reg_CAM,theta_7_reg_CAM)
-    coeffs_attn <- pars_period %>% select(theta_6_x1_reg_CAM, theta_6_x2_reg_CAM, theta_6_x3_reg_CAM,
+    coeffs[c(1,2,11)] <- pars_period %>% dplyr::select(theta_1_if_reg_CAM,theta_1_slab_reg_CAM,theta_7_reg_CAM)
+    coeffs_attn <- pars_period %>% dplyr::select(theta_6_x1_reg_CAM, theta_6_x2_reg_CAM, theta_6_x3_reg_CAM,
                                          theta_6_1_reg_CAM, theta_6_2_reg_CAM, theta_6_3_reg_CAM)
   } else if(reg == 4) {
-    coeffs[c(1,2,11)] <- pars_period %>% select(theta_1_if_reg_Ja,theta_1_slab_reg_Ja,theta_7_reg_Ja)
-    coeffs_attn <- pars_period %>% select(theta_6_x1_reg_Ja, theta_6_x2_reg_Ja, theta_6_x3_reg_Ja,
+    coeffs[c(1,2,11)] <- pars_period %>% dplyr::select(theta_1_if_reg_Ja,theta_1_slab_reg_Ja,theta_7_reg_Ja)
+    coeffs_attn <- pars_period %>% dplyr::select(theta_6_x1_reg_Ja, theta_6_x2_reg_Ja, theta_6_x3_reg_Ja,
                                          theta_6_1_reg_Ja, theta_6_2_reg_Ja, theta_6_3_reg_Ja)
     delta_ln_z <- log(z_2_5) - calc_z_from_vs(vs, pars_z_ja)
-    coeffs_z <- pars_period %>% select(theta_11_Ja, theta_12_Ja)
+    coeffs_z <- pars_period %>% dplyr::select(theta_11_Ja, theta_12_Ja)
   } else if(reg == 5) {
-    coeffs[c(1,2,11)] <- pars_period %>% select(theta_1_if_reg_NZ,theta_1_slab_reg_NZ,theta_7_reg_NZ)
-    coeffs_attn <- pars_period %>% select(theta_6_x1_reg_NZ, theta_6_x2_reg_NZ, theta_6_x3_reg_NZ,
+    coeffs[c(1,2,11)] <- pars_period %>% dplyr::select(theta_1_if_reg_NZ,theta_1_slab_reg_NZ,theta_7_reg_NZ)
+    coeffs_attn <- pars_period %>% dplyr::select(theta_6_x1_reg_NZ, theta_6_x2_reg_NZ, theta_6_x3_reg_NZ,
                                          theta_6_1_reg_NZ, theta_6_2_reg_NZ, theta_6_3_reg_NZ)
     delta_ln_z <- log(z_1) - calc_z_from_vs(vs, pars_z_nz)
-    coeffs_z <- pars_period %>% select(theta_11_NZ, theta_12_NZ)
+    coeffs_z <- pars_period %>% dplyr::select(theta_11_NZ, theta_12_NZ)
   } else if(reg == 6) {
-    coeffs[c(1,2,11)] <- pars_period %>% select(theta_1_if_reg_SA,theta_1_slab_reg_SA,theta_7_reg_SA)
-    coeffs_attn <- pars_period %>% select(theta_6_x1_reg_SA, theta_6_x2_reg_SA, theta_6_x3_reg_SA,
+    coeffs[c(1,2,11)] <- pars_period %>% dplyr::select(theta_1_if_reg_SA,theta_1_slab_reg_SA,theta_7_reg_SA)
+    coeffs_attn <- pars_period %>% dplyr::select(theta_6_x1_reg_SA, theta_6_x2_reg_SA, theta_6_x3_reg_SA,
                                          theta_6_1_reg_SA, theta_6_2_reg_SA, theta_6_3_reg_SA)
   } else if(reg == 7) {
-    coeffs[c(1,2,11)] <- pars_period %>% select(theta_1_if_reg_Tw,theta_1_slab_reg_Tw,theta_7_reg_Tw)
-    coeffs_attn <- pars_period %>% select(theta_6_x1_reg_Tw, theta_6_x2_reg_Tw, theta_6_x3_reg_Tw,
+    coeffs[c(1,2,11)] <- pars_period %>% dplyr::select(theta_1_if_reg_Tw,theta_1_slab_reg_Tw,theta_7_reg_Tw)
+    coeffs_attn <- pars_period %>% dplyr::select(theta_6_x1_reg_Tw, theta_6_x2_reg_Tw, theta_6_x3_reg_Tw,
                                          theta_6_1_reg_Tw, theta_6_2_reg_Tw, theta_6_3_reg_Tw)
     delta_ln_z <- log(z_1) - calc_z_from_vs(vs, pars_z_tw)
-    coeffs_z <- pars_period %>% select(theta_11_Tw, theta_12_Tw)
-  }
-  else if(reg == 0) {
+    coeffs_z <- pars_period %>% dplyr::select(theta_11_Tw, theta_12_Tw)
+  } else if(reg == 0) {
     theta_6 <- pars_period$mu_theta_6
     theta_6b <- pars_period$mu_theta_6b
     coeffs_attn <- c(theta_6b, theta_6b, theta_6b, theta_6b, theta_6, theta_6)
   }
   
-  delta_bz <- as.numeric(pars_period %>% select(dzb_if, dzb_slab))
-  coeffs_nft <- as.numeric(pars_period %>% select(nft_1, nft_2))
+  delta_bz <- as.numeric(pars_period %>% dplyr::select(dzb_if, dzb_slab))
+  coeffs_nft <- as.numeric(pars_period %>% dplyr::select(nft_1, nft_2))
   
   coeffs <- as.numeric(coeffs)
   coeffs_attn <- as.numeric(coeffs_attn)
@@ -465,12 +456,10 @@ kbcg20_posterior <- function(period, m, rrup, ztor, fs, vs, z_1, z_2_5, mb, reg,
   if (reg == 3 || reg == 6) {
     r1 = FractionBackArc * rrup
     r3 = 0
-  }
-  else if (reg == 4) {
+  } else if (reg == 4) {
     r1 = FractionBackArc * rrup
     r3 = FractionNankai * rrup
-  }
-  else {
+  } else {
     r1 = 0
     r3 = 0
   }
@@ -481,11 +470,9 @@ kbcg20_posterior <- function(period, m, rrup, ztor, fs, vs, z_1, z_2_5, mb, reg,
   fx = 1
   if (r1 == 0 && r2 == 0) {
     fx = 0
-  }
-  else if (r1 == 0 && r3 == 0) {
+  } else if (r1 == 0 && r3 == 0) {
     fx = 0
-  }
-  else if (r2 == 0 && r3 == 0) {
+  } else if (r2 == 0 && r3 == 0) {
     fx = 0
   }
   
@@ -493,7 +480,7 @@ kbcg20_posterior <- function(period, m, rrup, ztor, fs, vs, z_1, z_2_5, mb, reg,
   period_used <- 0.
   vsrock <- 1100
   pars_period <- parameters[parameters$T == period_used,]
-  coeffs <- pars_period %>% select(mu_theta_1_if:theta_6xc)
+  coeffs <- pars_period %>% dplyr::select(mu_theta_1_if:theta_6xc)
   k1k2 <- interp_k1k2(period_used)
   dmb <- interp_dmb(period_used, reg)
 
@@ -501,32 +488,32 @@ kbcg20_posterior <- function(period, m, rrup, ztor, fs, vs, z_1, z_2_5, mb, reg,
   coeffs_z <- c(0,0)
   
   if(reg == 1) {
-    coeffs[c(1,2,11)] <- pars_period %>% select(theta_1_if_reg_Al,theta_1_slab_reg_Al,theta_7_reg_Al)
-    coeffs_attn <- pars_period %>% select(theta_6_x1_reg_Al, theta_6_x2_reg_Al, theta_6_x3_reg_Al,
+    coeffs[c(1,2,11)] <- pars_period %>% dplyr::select(theta_1_if_reg_Al,theta_1_slab_reg_Al,theta_7_reg_Al)
+    coeffs_attn <- pars_period %>% dplyr::select(theta_6_x1_reg_Al, theta_6_x2_reg_Al, theta_6_x3_reg_Al,
                                          theta_6_1_reg_Al, theta_6_2_reg_Al, theta_6_3_reg_Al)
   } else if(reg == 2) {
-    coeffs[c(1,2,11)] <- pars_period %>% select(theta_1_if_reg_Ca,theta_1_slab_reg_Ca,theta_7_reg_Ca)
-    coeffs_attn <- pars_period %>% select(theta_6_x1_reg_Ca, theta_6_x2_reg_Ca, theta_6_x3_reg_Ca,
+    coeffs[c(1,2,11)] <- pars_period %>% dplyr::select(theta_1_if_reg_Ca,theta_1_slab_reg_Ca,theta_7_reg_Ca)
+    coeffs_attn <- pars_period %>% dplyr::select(theta_6_x1_reg_Ca, theta_6_x2_reg_Ca, theta_6_x3_reg_Ca,
                                          theta_6_1_reg_Ca, theta_6_2_reg_Ca, theta_6_3_reg_Ca)
   } else if(reg == 3) {
-    coeffs[c(1,2,11)] <- pars_period %>% select(theta_1_if_reg_CAM,theta_1_slab_reg_CAM,theta_7_reg_CAM)
-    coeffs_attn = coeffs_attn = pars_period %>% select(theta_6_x1_reg_CAM, theta_6_x2_reg_CAM, theta_6_x3_reg_CAM,
+    coeffs[c(1,2,11)] <- pars_period %>% dplyr::select(theta_1_if_reg_CAM,theta_1_slab_reg_CAM,theta_7_reg_CAM)
+    coeffs_attn = coeffs_attn = pars_period %>% dplyr::select(theta_6_x1_reg_CAM, theta_6_x2_reg_CAM, theta_6_x3_reg_CAM,
                                                        theta_6_1_reg_CAM, theta_6_2_reg_CAM, theta_6_3_reg_CAM)
   } else if(reg == 4) {
-    coeffs[c(1,2,11)] <- pars_period %>% select(theta_1_if_reg_Ja,theta_1_slab_reg_Ja,theta_7_reg_Ja)
-    coeffs_attn = pars_period %>% select(theta_6_x1_reg_Ja, theta_6_x2_reg_Ja, theta_6_x3_reg_Ja,
+    coeffs[c(1,2,11)] <- pars_period %>% dplyr::select(theta_1_if_reg_Ja,theta_1_slab_reg_Ja,theta_7_reg_Ja)
+    coeffs_attn = pars_period %>% dplyr::select(theta_6_x1_reg_Ja, theta_6_x2_reg_Ja, theta_6_x3_reg_Ja,
                                                        theta_6_1_reg_Ja, theta_6_2_reg_Ja, theta_6_3_reg_Ja)
   } else if(reg == 5) {
-    coeffs[c(1,2,11)] <- pars_period %>% select(theta_1_if_reg_NZ,theta_1_slab_reg_NZ,theta_7_reg_NZ)
-    coeffs_attn = coeffs_attn = pars_period %>% select(theta_6_x1_reg_NZ, theta_6_x2_reg_NZ, theta_6_x3_reg_NZ,
+    coeffs[c(1,2,11)] <- pars_period %>% dplyr::select(theta_1_if_reg_NZ,theta_1_slab_reg_NZ,theta_7_reg_NZ)
+    coeffs_attn = coeffs_attn = pars_period %>% dplyr::select(theta_6_x1_reg_NZ, theta_6_x2_reg_NZ, theta_6_x3_reg_NZ,
                                                        theta_6_1_reg_NZ, theta_6_2_reg_NZ, theta_6_3_reg_NZ)
   } else if(reg == 6) {
-    coeffs[c(1,2,11)] <- pars_period %>% select(theta_1_if_reg_SA,theta_1_slab_reg_SA,theta_7_reg_SA)
-    coeffs_attn = pars_period %>% select(theta_6_x1_reg_SA, theta_6_x2_reg_SA, theta_6_x3_reg_SA,
+    coeffs[c(1,2,11)] <- pars_period %>% dplyr::select(theta_1_if_reg_SA,theta_1_slab_reg_SA,theta_7_reg_SA)
+    coeffs_attn = pars_period %>% dplyr::select(theta_6_x1_reg_SA, theta_6_x2_reg_SA, theta_6_x3_reg_SA,
                                                        theta_6_1_reg_SA, theta_6_2_reg_SA, theta_6_3_reg_SA)
   } else if(reg == 7) {
-    coeffs[c(1,2,11)] <- pars_period %>% select(theta_1_if_reg_Tw,theta_1_slab_reg_Tw,theta_7_reg_Tw)
-    coeffs_attn  = pars_period %>% select(theta_6_x1_reg_Tw, theta_6_x2_reg_Tw, theta_6_x3_reg_Tw,
+    coeffs[c(1,2,11)] <- pars_period %>% dplyr::select(theta_1_if_reg_Tw,theta_1_slab_reg_Tw,theta_7_reg_Tw)
+    coeffs_attn  = pars_period %>% dplyr::select(theta_6_x1_reg_Tw, theta_6_x2_reg_Tw, theta_6_x3_reg_Tw,
                                                        theta_6_1_reg_Tw, theta_6_2_reg_Tw, theta_6_3_reg_Tw)
   } else if(reg == 0) {
     theta_6 <- pars_period$mu_theta_6
@@ -534,8 +521,8 @@ kbcg20_posterior <- function(period, m, rrup, ztor, fs, vs, z_1, z_2_5, mb, reg,
     coeffs_attn <- c(theta_6b, theta_6b, theta_6b, theta_6b, theta_6, theta_6)
   }
   
-  delta_bz <- as.numeric(pars_period %>% select(dzb_if, dzb_slab))
-  coeffs_nft <- as.numeric(pars_period %>% select(nft_1, nft_2))
+  delta_bz <- as.numeric(pars_period %>% dplyr::select(dzb_if, dzb_slab))
+  coeffs_nft <- as.numeric(pars_period %>% dplyr::select(nft_1, nft_2))
   
   coeffs <- as.numeric(coeffs)
   coeffs_attn <- as.numeric(coeffs_attn)
@@ -563,56 +550,55 @@ kbcg20_posterior <- function(period, m, rrup, ztor, fs, vs, z_1, z_2_5, mb, reg,
     coeffs_z <- c(0,0)
   
     if(reg == 1) {
-      coeffs[c(1,2,11)] <- pars_period %>% select(theta_1_if_reg_Al,theta_1_slab_reg_Al,theta_7_reg_Al)
-      coeffs_attn <- pars_period %>% select(theta_6_x1_reg_Al, theta_6_x2_reg_Al, theta_6_x3_reg_Al,
+      coeffs[c(1,2,11)] <- pars_period %>% dplyr::select(theta_1_if_reg_Al,theta_1_slab_reg_Al,theta_7_reg_Al)
+      coeffs_attn <- pars_period %>% dplyr::select(theta_6_x1_reg_Al, theta_6_x2_reg_Al, theta_6_x3_reg_Al,
                                            theta_6_1_reg_Al, theta_6_2_reg_Al, theta_6_3_reg_Al)
       } else if(reg == 2) {
-      coeffs[c(1,2,11)] <- pars_period %>% select(theta_1_if_reg_Ca,theta_1_slab_reg_Ca,theta_7_reg_Ca)
-      coeffs_attn <- pars_period %>% select(theta_6_x1_reg_Ca, theta_6_x2_reg_Ca, theta_6_x3_reg_Ca,
+      coeffs[c(1,2,11)] <- pars_period %>% dplyr::select(theta_1_if_reg_Ca,theta_1_slab_reg_Ca,theta_7_reg_Ca)
+      coeffs_attn <- pars_period %>% dplyr::select(theta_6_x1_reg_Ca, theta_6_x2_reg_Ca, theta_6_x3_reg_Ca,
                                            theta_6_1_reg_Ca, theta_6_2_reg_Ca, theta_6_3_reg_Ca)
       delta_ln_z <- log(z_2_5) - calc_z_from_vs(vs, pars_z_casc)
-      coeffs_z <- pars_period %>% select(theta_11_Ca, theta_12_Ca)
-      coeff_seattle <- pars_period %>% select(mean_residual_Seattle_basin)
+      coeffs_z <- pars_period %>% dplyr::select(theta_11_Ca, theta_12_Ca)
+      coeff_seattle <- pars_period %>% dplyr::select(mean_residual_Seattle_basin)
       if(Seattle_Basin) {
         coeffs_z <- c(coeff_seattle,0)
       }
     } else if(reg == 3) {
-      coeffs[c(1,2,11)] <- pars_period %>% select(theta_1_if_reg_CAM,theta_1_slab_reg_CAM,theta_7_reg_CAM)
-      coeffs_attn <- pars_period %>% select(theta_6_x1_reg_CAM, theta_6_x2_reg_CAM, theta_6_x3_reg_CAM,
+      coeffs[c(1,2,11)] <- pars_period %>% dplyr::select(theta_1_if_reg_CAM,theta_1_slab_reg_CAM,theta_7_reg_CAM)
+      coeffs_attn <- pars_period %>% dplyr::select(theta_6_x1_reg_CAM, theta_6_x2_reg_CAM, theta_6_x3_reg_CAM,
                                            theta_6_1_reg_CAM, theta_6_2_reg_CAM, theta_6_3_reg_CAM)
     } else if(reg == 4) {
-      coeffs[c(1,2,11)] <- pars_period %>% select(theta_1_if_reg_Ja,theta_1_slab_reg_Ja,theta_7_reg_Ja)
-      coeffs_attn <- pars_period %>% select(theta_6_x1_reg_Ja, theta_6_x2_reg_Ja, theta_6_x3_reg_Ja,
+      coeffs[c(1,2,11)] <- pars_period %>% dplyr::select(theta_1_if_reg_Ja,theta_1_slab_reg_Ja,theta_7_reg_Ja)
+      coeffs_attn <- pars_period %>% dplyr::select(theta_6_x1_reg_Ja, theta_6_x2_reg_Ja, theta_6_x3_reg_Ja,
                                            theta_6_1_reg_Ja, theta_6_2_reg_Ja, theta_6_3_reg_Ja)
       delta_ln_z <- log(z_2_5) - calc_z_from_vs(vs, pars_z_ja)
-      coeffs_z <- pars_period %>% select(theta_11_Ja, theta_12_Ja)
+      coeffs_z <- pars_period %>% dplyr::select(theta_11_Ja, theta_12_Ja)
     } else if(reg == 5) {
-      coeffs[c(1,2,11)] <- pars_period %>% select(theta_1_if_reg_NZ,theta_1_slab_reg_NZ,theta_7_reg_NZ)
-      coeffs_attn <- pars_period %>% select(theta_6_x1_reg_NZ, theta_6_x2_reg_NZ, theta_6_x3_reg_NZ,
+      coeffs[c(1,2,11)] <- pars_period %>% dplyr::select(theta_1_if_reg_NZ,theta_1_slab_reg_NZ,theta_7_reg_NZ)
+      coeffs_attn <- pars_period %>% dplyr::select(theta_6_x1_reg_NZ, theta_6_x2_reg_NZ, theta_6_x3_reg_NZ,
                                            theta_6_1_reg_NZ, theta_6_2_reg_NZ, theta_6_3_reg_NZ)
       delta_ln_z <- log(z_1) - calc_z_from_vs(vs, pars_z_nz)
-      coeffs_z <- pars_period %>% select(theta_11_NZ, theta_12_NZ)
+      coeffs_z <- pars_period %>% dplyr::select(theta_11_NZ, theta_12_NZ)
     } else if(reg == 6) {
-      coeffs[c(1,2,11)] <- pars_period %>% select(theta_1_if_reg_SA,theta_1_slab_reg_SA,theta_7_reg_SA)
-      coeffs_attn <- pars_period %>% select(theta_6_x1_reg_SA, theta_6_x2_reg_SA, theta_6_x3_reg_SA,
+      coeffs[c(1,2,11)] <- pars_period %>% dplyr::select(theta_1_if_reg_SA,theta_1_slab_reg_SA,theta_7_reg_SA)
+      coeffs_attn <- pars_period %>% dplyr::select(theta_6_x1_reg_SA, theta_6_x2_reg_SA, theta_6_x3_reg_SA,
                                            theta_6_1_reg_SA, theta_6_2_reg_SA, theta_6_3_reg_SA)
     } else if(reg == 7) {
-      coeffs[c(1,2,11)] <- pars_period %>% select(theta_1_if_reg_Tw,theta_1_slab_reg_Tw,theta_7_reg_Tw)
-      coeffs_attn <- pars_period %>% select(theta_6_x1_reg_Tw, theta_6_x2_reg_Tw, theta_6_x3_reg_Tw,
+      coeffs[c(1,2,11)] <- pars_period %>% dplyr::select(theta_1_if_reg_Tw,theta_1_slab_reg_Tw,theta_7_reg_Tw)
+      coeffs_attn <- pars_period %>% dplyr::select(theta_6_x1_reg_Tw, theta_6_x2_reg_Tw, theta_6_x3_reg_Tw,
                                            theta_6_1_reg_Tw, theta_6_2_reg_Tw, theta_6_3_reg_Tw)
       delta_ln_z <- log(z_1) - calc_z_from_vs(vs, pars_z_tw)
-      coeffs_z <- pars_period %>% select(theta_11_Tw, theta_12_Tw)
-    }
-    else if(reg == 0) {
-      coeffs[c(1,2,11)] <- pars_period %>% select(theta_1_if_reg_global, theta_1_slab_reg_global,
+      coeffs_z <- pars_period %>% dplyr::select(theta_11_Tw, theta_12_Tw)
+    } else if(reg == 0) {
+      coeffs[c(1,2,11)] <- pars_period %>% dplyr::select(theta_1_if_reg_global, theta_1_slab_reg_global,
                                                   theta_7_reg_global)
-      coeffs_attn <- pars_period %>% select(theta_6_x1_reg_global, theta_6_x2_reg_global, theta_6_x3_reg_global,
+      coeffs_attn <- pars_period %>% dplyr::select(theta_6_x1_reg_global, theta_6_x2_reg_global, theta_6_x3_reg_global,
                                            theta_6_1_reg_global, theta_6_2_reg_global, theta_6_3_reg_global)
     }
     
     
-    delta_bz <- as.numeric(pars_period %>% select(dzb_if, dzb_slab))
-    coeffs_nft <- as.numeric(pars_period %>% select(nft_1, nft_2))
+    delta_bz <- as.numeric(pars_period %>% dplyr::select(dzb_if, dzb_slab))
+    coeffs_nft <- as.numeric(pars_period %>% dplyr::select(nft_1, nft_2))
     
     coeffs <- as.numeric(coeffs)
     coeffs_attn <- as.numeric(coeffs_attn)
@@ -639,7 +625,7 @@ kbcg20_posterior <- function(period, m, rrup, ztor, fs, vs, z_1, z_2_5, mb, reg,
 
 ```r
 periods <- c(0., 0.01, 0.02, 0.03, 0.05, 0.075, 0.1, 0.15, 0.2, 0.25, 0.3, 0.4, 0.5, 0.75, 1., 1.5, 2., 3., 4., 5., 7.5, 10.)
-per <- 0.01
+per <- -1
 mag <- 8
 rrup <- 100
 distance <- c(0,100,0)
@@ -666,7 +652,7 @@ sprintf('median prediction from mean of coefficients: %f',y$median)
 ```
 
 ```
-## [1] "median prediction from mean of coefficients: -2.280182"
+## [1] "median prediction from mean of coefficients: 2.439532"
 ```
 
 ```r
@@ -674,7 +660,7 @@ sprintf('phi: %f',y$phi)
 ```
 
 ```
-## [1] "phi: 0.599596"
+## [1] "phi: 0.511486"
 ```
 
 ```r
@@ -682,7 +668,7 @@ sprintf('tau: %f',y$tau)
 ```
 
 ```
-## [1] "tau: 0.494230"
+## [1] "tau: 0.450985"
 ```
 
 ```r
@@ -690,7 +676,7 @@ sprintf('mean of median predictions: %f',y_post$mean)
 ```
 
 ```
-## [1] "mean of median predictions: -2.297514"
+## [1] "mean of median predictions: 2.431268"
 ```
 
 ```r
@@ -698,7 +684,7 @@ sprintf('median of median predictions: %f',y_post$median)
 ```
 
 ```
-## [1] "median of median predictions: -2.299777"
+## [1] "median of median predictions: 2.440602"
 ```
 
 ```r
@@ -706,7 +692,7 @@ sprintf('standard deviation of median predictions: %f',y_post$psi)
 ```
 
 ```
-## [1] "standard deviation of median predictions: 0.354386"
+## [1] "standard deviation of median predictions: 0.143551"
 ```
 
 ```r
