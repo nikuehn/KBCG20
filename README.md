@@ -12,3 +12,7 @@ This is a repository that includes files/information for the BGA subduction grou
 * pictures: contains pictures used in R-examples
 
 The files KBCG20 contain an R-implementation of the functional form for KBCG20. THis function is only used to show he implementation, and compare predictions.
+
+Update September 2021:
+The drectory COEFFS_SPE21 contains new sets of cofficiets, based on updated Alaska data.
+Only the regional coefficients for Alaska have changed.
