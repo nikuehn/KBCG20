@@ -1,0 +1,15 @@
+"Region","Subregion","Mb_if","Mb_slab"
+"0_global","Global",7.9,7.6
+"1_Alaska","Aleutian",8,8
+"1_Alaska","Alaska",8.6,7.2
+"2_Cascadia","Cascadia",8,7.2
+"3_CentralAmerica&Mexico","Central_America_S",7.5,7.6
+"3_CentralAmerica&Mexico","Central_America_N",7.4,7.4
+"4_Japan","Japan_Pac",8.5,7.6
+"4_Japan","Japan_Phi",7.7,7.6
+"5_NewZealand","New_Zealand_N",8.3,7.6
+"5_NewZealand","New_Zealand_S",8,7.6
+"6_SouthAmerica","South_America_N",8.5,7.3
+"6_SouthAmerica","South_America_S",8.6,7.2
+"7_Taiwan","Taiwan_W",7.1,7.7
+"7_Taiwan","Taiwan_E",7.1,7.7
