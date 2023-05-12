@@ -13,7 +13,8 @@ This is a repository that includes files/information for the BGA subduction grou
 * UNCERTAINTY: Contains values of the standard deviations of epistemic uncerainty for different regions, magnitudes, distances, and tectonic environments, calculated from predictions based on the posterior samples. Can be used for a simplified application of epistemic uncertainty, such as a scaled backbone.
 * pictures: contains pictures used in R-examples
 
-The files KBCG20 contain an R-implementation of the functional form for KBCG20. THis function is only used to show he implementation, and compare predictions.
+The files KBCG20 contain an R-implementation of the functional form for KBCG20. THis function is only used to show the implementation, and compare predictions.
+The html files can be viewed by copying the address and inserting it into https://htmlpreview.github.io/.
 
 Update September 2021:
 The drectory COEFFS_SEP21 contains new sets of cofficiets, based on updated Alaska data.
